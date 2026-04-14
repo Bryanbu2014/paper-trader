@@ -1,12 +1,15 @@
+from datetime import datetime
+
+import pandas as pd
 import streamlit as st
 import yfinance as yf
-import pandas as pd
-from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
-from supabase import create_client, Client
+from supabase import Client, create_client
+
+import auth
 
 # --- APP CONFIG & AUTO-REFRESH ---
-st.set_page_config(page_title="Paper Trader", layout="wide", page_icon="⚡")
+st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
 st_autorefresh(interval=60000, limit=None, key="market_timer")
 
 # --- SUPABASE SETUP ---
@@ -14,38 +17,9 @@ url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
 
-USER_ACCOUNTS = st.secrets["passwords"]
-
 # --- SECURITY BOUNCER ---
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-if "username" not in st.session_state:
-    st.session_state.username = ""
-
-if not st.session_state.logged_in:
-    with st.container(border=True):
-        st.title("🔒 Restricted Access")
-        st.write("Please log in to your personal trading account.")
-
-        with st.form("login_form", border=False):
-            input_user = st.text_input("Username").lower()
-            input_pass = st.text_input("Password", type="password")
-            submit_button = st.form_submit_button(
-                "Log In", type="primary", use_container_width=True
-            )
-
-            if submit_button:
-                if (
-                    input_user in USER_ACCOUNTS
-                    and USER_ACCOUNTS[input_user] == input_pass
-                ):
-                    st.session_state.logged_in = True
-                    st.session_state.username = input_user
-                    st.rerun()
-                else:
-                    st.error("Incorrect username or password.")
-
-    st.stop()  # Stops here if not logged in
+if not auth.check_password():
+    st.stop()
 
 
 # --- CLOUD DATABASE LOGIC ---
@@ -139,7 +113,29 @@ portfolio = pd.DataFrame(portfolio_data)
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.title("Paper Trader")
+    st.markdown(
+        """
+    <style>
+    .gradient-text {
+        background: linear-gradient(to right, #00C9FF, #92FE9D, #00C9FF);
+        background-size: 200% auto;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: shine 3s linear infinite;
+        font-weight: 900;
+    }
+    @keyframes shine {
+        to {
+            background-position: 200% center;
+        }
+    }
+    </style>
+    <h1 style='text-align: left;'>
+        <span class='gradient-text'>Paper Trading Lab</span> 
+    </h1>
+        """,
+        unsafe_allow_html=True,
+    )
     st.write(f"👤 Logged in as: **{st.session_state.username.upper()}**")
 
     with st.container(border=True):
@@ -218,12 +214,14 @@ with tab_terminal:
             st.subheader("⚙️ Manage List")
             with st.form("add_stock_form", border=False):
                 add_col1, add_col2 = st.columns([2, 1], vertical_alignment="bottom")
-                
+
                 with add_col1:
                     new_ticker = st.text_input("Ticker to Add", key="add_t").upper()
                 with add_col2:
                     # Changed st.button to st.form_submit_button
-                    submit_add = st.form_submit_button("➕ Add", use_container_width=True)
+                    submit_add = st.form_submit_button(
+                        "➕ Add", use_container_width=True
+                    )
 
                 # The logic runs if the button is clicked OR Enter is pressed
                 if submit_add:
@@ -231,7 +229,9 @@ with tab_terminal:
                         st.session_state.watchlist.append(new_ticker)
                         st.session_state.watchlist.sort()
                         # --- CLOUD SAVE ---
-                        update_watchlist(st.session_state.username, st.session_state.watchlist)
+                        update_watchlist(
+                            st.session_state.username, st.session_state.watchlist
+                        )
                         st.rerun()
 
             if st.session_state.watchlist:
@@ -251,7 +251,9 @@ with tab_terminal:
 
                 st.divider()
                 if st.button(
-                    "🗑️ Clear Entire Watchlist", type="primary", use_container_width=True
+                    "🗑️ Clear Entire Watchlist",
+                    type="primary",
+                    use_container_width=True,
                 ):
                     st.session_state.watchlist = []
                     # --- CLOUD SAVE ---
@@ -263,9 +265,7 @@ with tab_terminal:
     with col_trade:
         with st.container(border=True):
             st.subheader("Target Quote")
-            ticker = st.text_input(
-                "Enter Target Ticker (e.g., TSLA, AAPL)", ""
-            ).upper()
+            ticker = st.text_input("Enter Target Ticker (e.g., TSLA, AAPL)", "").upper()
             current_price = 0
             if ticker:
                 try:

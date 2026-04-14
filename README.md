@@ -1,8 +1,8 @@
-# ⚡ Paper Trader
+# 💸 Paper Trading Lab
 
 A fast, minimalist virtual stock trading terminal built with Python and Streamlit.
 
-Paper Trader allows multiple users to practice trading stocks in real-time using live market data, without risking real money. Every user gets a virtual $100,000 starting balance, and all trades, portfolios, and watchlists are safely saved to a cloud database.
+Paper Trading Lab allows multiple users to practice trading stocks in real-time using live market data, without risking real money. Every user gets a virtual $100,000 starting balance, and all trades, portfolios, and watchlists are safely saved to a cloud database.
 
 ## ✨ Features
 
@@ -26,7 +26,7 @@ The trading terminal is currently in a "Private Beta" to protect database resour
 
 **How to get an account:**
 
-1. Send me a message via [bubryanwb@gmail.com / [LinkedIn Wen Bin (Bryan) Bu](https://www.linkedin.com/in/bryanbuwb/)].
+1. Send me a message via bubryanwb@gmail.com / [LinkedIn Wen Bin (Bryan) Bu](https://www.linkedin.com/in/bryanbuwb/).
 2. Include your preferred **Username**.
 3. I will set up your credentials and provide you with a password.
 
