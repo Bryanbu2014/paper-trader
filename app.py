@@ -5,19 +5,18 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 from supabase import create_client, Client
 
-# --- 1. APP CONFIG & AUTO-REFRESH ---
+# --- APP CONFIG & AUTO-REFRESH ---
 st.set_page_config(page_title="Paper Trader", layout="wide", page_icon="⚡")
 st_autorefresh(interval=60000, limit=None, key="market_timer")
 
-# --- 2. SUPABASE INITIALIZATION ---
-# Pulls your secrets from .streamlit/secrets.toml
+# --- SUPABASE SETUP ---
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
 
 USER_ACCOUNTS = st.secrets["passwords"]
 
-# --- 3. SECURITY BOUNCER ---
+# --- SECURITY BOUNCER ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "username" not in st.session_state:
@@ -46,10 +45,10 @@ if not st.session_state.logged_in:
                 else:
                     st.error("Incorrect username or password.")
 
-    st.stop()  # Stops the app here if not logged in
+    st.stop()  # Stops here if not logged in
 
 
-# --- 4. CLOUD DATABASE LOGIC ---
+# --- CLOUD DATABASE LOGIC ---
 def load_data(username):
     # Fetch Balance
     bal_res = (
@@ -102,7 +101,7 @@ def update_watchlist(username, watchlist):
         supabase.table("watchlists").insert(records).execute()
 
 
-# --- 5. LOAD USER DATA ---
+# --- LOAD USER DATA ---
 # We only load from the database once when the app starts or user logs in
 if "balance" not in st.session_state:
     bal, hist, wl = load_data(st.session_state.username)
@@ -110,7 +109,7 @@ if "balance" not in st.session_state:
     st.session_state.history = hist
     st.session_state.watchlist = wl
 
-# --- 6. CALCULATE PORTFOLIO & AVERAGE PRICE ---
+# --- CALCULATE PORTFOLIO & AVERAGE PRICE ---
 portfolio_data = []
 if not st.session_state.history.empty:
     df = st.session_state.history
@@ -138,7 +137,7 @@ if not st.session_state.history.empty:
 
 portfolio = pd.DataFrame(portfolio_data)
 
-# --- 7. SIDEBAR: WALLET & SETTINGS ---
+# --- SIDEBAR ---
 with st.sidebar:
     st.title("Paper Trader")
     st.write(f"👤 Logged in as: **{st.session_state.username.upper()}**")
@@ -182,7 +181,7 @@ with st.sidebar:
         del st.session_state.watchlist
         st.rerun()
 
-# --- 8. MAIN INTERFACE ---
+# --- MAIN INTERFACE ---
 tab_terminal, tab_journal = st.tabs(["⚡ Market Terminal", "📜 Trade Journal"])
 
 with tab_terminal:
@@ -265,7 +264,7 @@ with tab_terminal:
         with st.container(border=True):
             st.subheader("Target Quote")
             ticker = st.text_input(
-                "Enter Target Ticker (e.g., TSLA, AAPL)", "NVDA"
+                "Enter Target Ticker (e.g., TSLA, AAPL)", ""
             ).upper()
             current_price = 0
             if ticker:

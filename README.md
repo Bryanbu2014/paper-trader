@@ -20,14 +20,15 @@ Paper Trader allows multiple users to practice trading stocks in real-time using
 - **Market Data:** `yfinance`
 - **Data Handling:** `pandas`
 
-## 🚀 How to Run Locally
+## 🔑 Requesting Access
 
-If you want to run this app on your own computer, follow these steps:
+The trading terminal is currently in a "Private Beta" to protect database resources. If you would like to test the app and start your own paper trading journey, please reach out to me!
 
-### 1. Install Required Libraries
+**How to get an account:**
 
-Open your terminal and install the necessary Python packages:
+1. Send me a message via [bubryanwb@gmail.com / [LinkedIn Wen Bin (Bryan) Bu](https://www.linkedin.com/in/bryanbuwb/)].
+2. Include your preferred **Username**.
+3. I will set up your credentials and provide you with a password.
 
-```bash
-pip install streamlit yfinance pandas streamlit-autorefresh supabase
-```
+_Note: Once you have access, your portfolio and trade history will be saved exclusively to your account name._  
+_Note: You are not allowed to change your password._
