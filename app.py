@@ -2,11 +2,13 @@ from datetime import datetime
 
 import pandas as pd
 import streamlit as st
-import yfinance as yf
 from streamlit_autorefresh import st_autorefresh
 from supabase import Client, create_client
 
 import auth
+import dashboard
+import journal
+import terminal
 
 # --- APP CONFIG & AUTO-REFRESH ---
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
@@ -66,7 +68,6 @@ def load_data(username):
 
 
 def update_balance(username, balance):
-    # Upsert updates the row if it exists, or creates it if it doesn't
     supabase.table("balances").upsert(
         {"username": username, "balance": balance}
     ).execute()
@@ -79,7 +80,6 @@ def add_trade_to_db(username, trade_dict):
 
 
 def update_watchlist(username, watchlist):
-    # Delete old list and insert the new one
     supabase.table("watchlists").delete().eq("username", username).execute()
     if watchlist:
         records = [{"username": username, "ticker": t} for t in watchlist]
@@ -87,7 +87,6 @@ def update_watchlist(username, watchlist):
 
 
 # --- LOAD USER DATA ---
-# We only load from the database once when the app starts or user logs in
 if "balance" not in st.session_state:
     bal, hist, wl = load_data(st.session_state.username)
     st.session_state.balance = bal
@@ -169,195 +168,14 @@ with st.sidebar:
         del st.session_state.watchlist
         st.rerun()
 
+
 # --- MAIN INTERFACE ---
-tab_terminal, tab_journal = st.tabs(["⚡ Market Terminal", "📜 Trade Journal"])
+tab_dashboard, tab_terminal = st.tabs(["📊 Trader Dashboard", "⚡ Market Terminal"])
 
 with tab_terminal:
-    col_watch, col_trade = st.columns([1, 2], gap="large")
+    terminal.render_terminal(
+        portfolio, update_balance, add_trade_to_db, update_watchlist
+    )
 
-    with col_watch:
-        with st.container(border=True):
-            st.subheader("Live Watchlist")
-            wl_display_data = []
-            for t in st.session_state.watchlist:
-                try:
-                    stock = yf.Ticker(t)
-                    price = stock.history(period="1d", interval="1m", prepost=True)[
-                        "Close"
-                    ].iloc[-1]
-                    wl_display_data.append(
-                        {"Ticker": t, "Live Price": f"${price:,.2f}"}
-                    )
-                except:
-                    wl_display_data.append(
-                        {"Ticker": t, "Live Price": "Error fetching"}
-                    )
-
-            if wl_display_data:
-                st.dataframe(
-                    pd.DataFrame(wl_display_data),
-                    use_container_width=True,
-                    hide_index=True,
-                )
-            else:
-                st.write("*Watchlist is empty.*")
-
-        with st.container(border=True):
-            st.subheader("Manage List")
-            with st.form("add_stock_form", border=False):
-                add_col1, add_col2 = st.columns([2, 1], vertical_alignment="bottom")
-
-                with add_col1:
-                    new_ticker = st.text_input("Ticker to Add", key="add_t").upper()
-                with add_col2:
-                    # Changed st.button to st.form_submit_button
-                    submit_add = st.form_submit_button(
-                        "➕ Add", use_container_width=True
-                    )
-
-                # The logic runs if the button is clicked OR Enter is pressed
-                if submit_add:
-                    if new_ticker and new_ticker not in st.session_state.watchlist:
-                        st.session_state.watchlist.append(new_ticker)
-                        st.session_state.watchlist.sort()
-                        # --- CLOUD SAVE ---
-                        update_watchlist(
-                            st.session_state.username, st.session_state.watchlist
-                        )
-                        st.rerun()
-
-            if st.session_state.watchlist:
-                rem_col1, rem_col2 = st.columns([2, 1], vertical_alignment="bottom")
-                with rem_col1:
-                    ticker_to_remove = st.selectbox(
-                        "Ticker to Remove", st.session_state.watchlist
-                    )
-                with rem_col2:
-                    if st.button("❌ Drop", use_container_width=True):
-                        st.session_state.watchlist.remove(ticker_to_remove)
-                        # --- CLOUD SAVE ---
-                        update_watchlist(
-                            st.session_state.username, st.session_state.watchlist
-                        )
-                        st.rerun()
-
-                st.divider()
-                if st.button(
-                    "🗑️ Clear Entire Watchlist",
-                    type="primary",
-                    use_container_width=True,
-                ):
-                    st.session_state.watchlist = []
-                    # --- CLOUD SAVE ---
-                    update_watchlist(
-                        st.session_state.username, st.session_state.watchlist
-                    )
-                    st.rerun()
-
-    with col_trade:
-        with st.container(border=True):
-            st.subheader("Target Quote")
-            ticker = st.text_input("Enter Target Ticker (e.g., TSLA, AAPL)", "").upper()
-            current_price = 0
-            if ticker:
-                try:
-                    stock = yf.Ticker(ticker)
-                    price_data = stock.history(period="1d", interval="1m", prepost=True)
-                    if not price_data.empty:
-                        current_price = price_data["Close"].iloc[-1]
-                        st.metric(
-                            label=f"Current {ticker} Price",
-                            value=f"${current_price:,.2f}",
-                        )
-                    else:
-                        st.warning("No data found right now.")
-                except Exception as e:
-                    st.error("Could not fetch data. Check the ticker symbol.")
-
-        with st.container(border=True):
-            st.subheader("Execute Trade")
-            if current_price > 0:
-                # We keep the 'bottom' alignment so the metric's number lines up with your input box
-                c1, c2 = st.columns([1, 1], vertical_alignment="center")
-                with c1:
-                    qty = st.number_input("Quantity to Trade", min_value=1, step=1)
-                with c2:
-                    total = qty * current_price
-                    # This is the "big huge" design you liked!
-                    st.metric(label="", value=f"${total:,.2f}")
-
-                shares_owned = 0
-                if not portfolio.empty and ticker in portfolio["Ticker"].values:
-                    shares_owned = portfolio.loc[
-                        portfolio["Ticker"] == ticker, "Quantity"
-                    ].iloc[0]
-
-                st.write(f"You currently own: **{shares_owned} shares**")
-
-                btn_buy, btn_sell = st.columns(2)
-
-                if btn_buy.button("🟢 BUY SHARES", use_container_width=True):
-                    if st.session_state.balance >= total:
-                        st.session_state.balance -= total
-                        new_trade = {
-                            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "Ticker": ticker,
-                            "Action": "BUY",
-                            "Quantity": qty,
-                            "Price": round(current_price, 2),
-                            "Total": round(total, 2),
-                        }
-                        st.session_state.history = pd.concat(
-                            [st.session_state.history, pd.DataFrame([new_trade])],
-                            ignore_index=True,
-                        )
-
-                        update_balance(
-                            st.session_state.username, st.session_state.balance
-                        )
-                        add_trade_to_db(st.session_state.username, new_trade)
-
-                        st.success(f"Bought {qty} shares of {ticker}!")
-                        st.rerun()
-                    else:
-                        st.error("Not enough cash!")
-
-                if btn_sell.button("🔴 SELL SHARES", use_container_width=True):
-                    if shares_owned >= qty:
-                        st.session_state.balance += total
-                        new_trade = {
-                            "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                            "Ticker": ticker,
-                            "Action": "SELL",
-                            "Quantity": qty,
-                            "Price": round(current_price, 2),
-                            "Total": round(total, 2),
-                        }
-                        st.session_state.history = pd.concat(
-                            [st.session_state.history, pd.DataFrame([new_trade])],
-                            ignore_index=True,
-                        )
-
-                        update_balance(
-                            st.session_state.username, st.session_state.balance
-                        )
-                        add_trade_to_db(st.session_state.username, new_trade)
-
-                        st.success(f"Sold {qty} shares of {ticker}!")
-                        st.rerun()
-                    else:
-                        st.error(f"You only own {shares_owned} shares.")
-            else:
-                st.info("Enter a valid target ticker above to enable trading.")
-
-with tab_journal:
-    with st.container(border=True):
-        st.subheader("Transaction Log")
-        if not st.session_state.history.empty:
-            st.dataframe(
-                st.session_state.history.iloc[::-1],
-                use_container_width=True,
-                hide_index=True,
-            )
-        else:
-            st.info("No trades have been recorded yet.")
+with tab_dashboard:
+    dashboard.render_dashboard()
