@@ -10,6 +10,17 @@ import auth
 
 # --- APP CONFIG & AUTO-REFRESH ---
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
+
+
+# Read and inject the external CSS file
+def load_css(file_name):
+    with open(file_name) as f:
+        st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+# Run the function
+load_css("style.css")
+
 st_autorefresh(interval=60000, limit=None, key="market_timer")
 
 # --- SUPABASE SETUP ---
@@ -113,27 +124,8 @@ portfolio = pd.DataFrame(portfolio_data)
 
 # --- SIDEBAR ---
 with st.sidebar:
-    st.markdown(
-        """
-    <style>
-    .gradient-text {
-        background: linear-gradient(to right, #00C9FF, #92FE9D, #00C9FF);
-        background-size: 200% auto;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: shine 3s linear infinite;
-        font-weight: 900;
-    }
-    @keyframes shine {
-        to {
-            background-position: 200% center;
-        }
-    }
-    </style>
-    <h1 style='text-align: left;'>
-        <span class='gradient-text'>Paper Trading Lab</span> 
-    </h1>
-        """,
+    st.sidebar.markdown(
+        "<h2 style='text-align: left; font-size: 24px;' class='main-logo'>Paper Trading Lab</h2>",
         unsafe_allow_html=True,
     )
     st.write(f"👤 Logged in as: **{st.session_state.username.upper()}**")
@@ -150,12 +142,12 @@ with st.sidebar:
             st.write("*No stocks owned yet.*")
 
     with st.container(border=True):
-        st.subheader("⚙️ Account Settings")
+        st.subheader("Account Settings")
         new_capital = st.number_input(
             "Starting Capital ($)", min_value=100.0, value=100000.0, step=1000.0
         )
 
-        if st.button("⚠️ Restart Account", use_container_width=True):
+        if st.button("⚠️ Restart Account", type="primary", use_container_width=True):
             st.session_state.balance = new_capital
             st.session_state.history = pd.DataFrame(
                 columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
@@ -185,7 +177,7 @@ with tab_terminal:
 
     with col_watch:
         with st.container(border=True):
-            st.subheader("👀 Live Watchlist")
+            st.subheader("Live Watchlist")
             wl_display_data = []
             for t in st.session_state.watchlist:
                 try:
@@ -211,7 +203,7 @@ with tab_terminal:
                 st.write("*Watchlist is empty.*")
 
         with st.container(border=True):
-            st.subheader("⚙️ Manage List")
+            st.subheader("Manage List")
             with st.form("add_stock_form", border=False):
                 add_col1, add_col2 = st.columns([2, 1], vertical_alignment="bottom")
 
