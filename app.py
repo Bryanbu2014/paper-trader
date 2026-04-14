@@ -277,13 +277,14 @@ with tab_terminal:
         with st.container(border=True):
             st.subheader("Execute Trade")
             if current_price > 0:
-                c1, c2 = st.columns([1, 1])
+                # We keep the 'bottom' alignment so the metric's number lines up with your input box
+                c1, c2 = st.columns([1, 1], vertical_alignment="center")
                 with c1:
                     qty = st.number_input("Quantity to Trade", min_value=1, step=1)
                 with c2:
                     total = qty * current_price
-                    st.write("")
-                    st.write(f"Total Value: **${total:,.2f}**")
+                    # This is the "big huge" design you liked!
+                    st.metric(label="", value=f"${total:,.2f}")
 
                 shares_owned = 0
                 if not portfolio.empty and ticker in portfolio["Ticker"].values:
@@ -311,7 +312,6 @@ with tab_terminal:
                             ignore_index=True,
                         )
 
-                        # --- CLOUD SAVE ---
                         update_balance(
                             st.session_state.username, st.session_state.balance
                         )
@@ -338,7 +338,6 @@ with tab_terminal:
                             ignore_index=True,
                         )
 
-                        # --- CLOUD SAVE ---
                         update_balance(
                             st.session_state.username, st.session_state.balance
                         )
