@@ -1,5 +1,4 @@
 from datetime import datetime
-
 import pandas as pd
 import streamlit as st
 import yfinance as yf
@@ -41,11 +40,7 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                 add_col1, add_col2 = st.columns([2, 1], vertical_alignment="bottom")
 
                 with add_col1:
-                    new_ticker = (
-                        st.text_input("Ticker to Add", key="add_t")
-                        .upper()
-                        .replace(" ", "")
-                    )
+                    new_ticker = st.text_input("Ticker to Add", key="add_t").upper()
                 with add_col2:
                     submit_add = st.form_submit_button(
                         "➕ Add", use_container_width=True
@@ -55,7 +50,6 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                     if new_ticker and new_ticker not in st.session_state.watchlist:
                         st.session_state.watchlist.append(new_ticker)
                         st.session_state.watchlist.sort()
-                        # --- CLOUD SAVE ---
                         update_watchlist(
                             st.session_state.username, st.session_state.watchlist
                         )
@@ -70,7 +64,6 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                 with rem_col2:
                     if st.button("❌ Drop", use_container_width=True):
                         st.session_state.watchlist.remove(ticker_to_remove)
-                        # --- CLOUD SAVE ---
                         update_watchlist(
                             st.session_state.username, st.session_state.watchlist
                         )
@@ -83,7 +76,6 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                     use_container_width=True,
                 ):
                     st.session_state.watchlist = []
-                    # --- CLOUD SAVE ---
                     update_watchlist(
                         st.session_state.username, st.session_state.watchlist
                     )
@@ -124,12 +116,19 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                     st.metric(label="", value=f"${total:,.2f}")
 
                 shares_owned = 0
-                if not portfolio.empty and ticker in portfolio["Ticker"].values:
-                    shares_owned = portfolio.loc[
-                        portfolio["Ticker"] == ticker, "Quantity"
-                    ].iloc[0]
+                buy_in_price = "$0.00"
 
-                st.write(f"You currently own: **{shares_owned} shares**")
+                if not portfolio.empty and ticker in portfolio["Ticker"].values:
+                    stock_row = portfolio.loc[portfolio["Ticker"] == ticker]
+                    shares_owned = stock_row["Quantity"].iloc[0]
+                    buy_in_price = stock_row["Avg Price"].iloc[0]
+
+                if shares_owned > 0:
+                    st.info(
+                        f"💼 You own **{shares_owned} shares** at a buy-in price of **{buy_in_price}**"
+                    )
+                else:
+                    st.write(f"You currently own: **0 shares**")
 
                 btn_buy, btn_sell = st.columns(2)
 

@@ -21,15 +21,20 @@ def check_password():
 
     with login_screen.container():
 
-        # Centered Animated Logo
         st.markdown(
-            "<h1 style='text-align: center; font-size: 80px; margin-bottom: 0px;' class='main-logo'>Paper Trading Lab</h1>",
+            """
+            <div style='text-align: center; margin-bottom: 30px;'>
+                <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
+                    Paper Trading Lab <span class='version-badge'>v1.0.0</span>
+                </h1>
+            </div>
+            """,
             unsafe_allow_html=True,
         )
 
         # Login Form Container
         with st.container(border=True):
-            st.title("Restricted Access")
+            st.title("⛔ Restricted Access")
             st.write("Please log in to your personal trading account.")
 
             with st.form("login_form", border=False):
@@ -51,7 +56,7 @@ def check_password():
                         st.error("Incorrect username or password.")
 
         # Request Access Toggle
-        with st.expander("Request Access"):
+        with st.expander("🔑 Request Access"):
             st.write(
                 "This trading terminal is currently in **Private Beta**. Want to start your own paper trading journey?"
             )
@@ -81,5 +86,18 @@ def check_password():
                 * **Note:** You are not allowed to change your password.
                 """
             )
+
+        with st.expander("🚀 What's New?"):
+            with st.expander("v1.0.0"):
+                st.markdown(
+                    """
+                    - Deployed the app to the internet
+                    - Connected the app to a database
+                    - Added a login screen for only authorized users
+                    - Built the screen for buying and selling stocks
+                    - Created dashboard
+                    - Added a simple history list
+                    """
+                )
 
     return False

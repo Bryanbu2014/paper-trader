@@ -1,49 +1,39 @@
 from datetime import datetime
-
 import pandas as pd
 import streamlit as st
 from streamlit_autorefresh import st_autorefresh
 from supabase import Client, create_client
-
 import auth
 import dashboard
 import journal
 import terminal
 
-# --- APP CONFIG & AUTO-REFRESH ---
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
 
 
-# Read and inject the external CSS file
 def load_css(file_name):
     with open(file_name) as f:
         st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 
-# Run the function
 load_css("style.css")
 
 st_autorefresh(interval=60000, limit=None, key="market_timer")
 
-# --- SUPABASE SETUP ---
 url = st.secrets["SUPABASE_URL"]
 key = st.secrets["SUPABASE_KEY"]
 supabase: Client = create_client(url, key)
 
-# --- SECURITY BOUNCER ---
 if not auth.check_password():
     st.stop()
 
 
-# --- CLOUD DATABASE LOGIC ---
 def load_data(username):
-    # Fetch Balance
     bal_res = (
         supabase.table("balances").select("balance").eq("username", username).execute()
     )
     balance = bal_res.data[0]["balance"] if bal_res.data else 100000.0
 
-    # Fetch History
     hist_res = (
         supabase.table("trades")
         .select("Timestamp, Ticker, Action, Quantity, Price, Total")
@@ -57,7 +47,6 @@ def load_data(username):
             columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
         )
 
-    # Fetch Watchlist
     wl_res = (
         supabase.table("watchlists").select("ticker").eq("username", username).execute()
     )
@@ -86,14 +75,12 @@ def update_watchlist(username, watchlist):
         supabase.table("watchlists").insert(records).execute()
 
 
-# --- LOAD USER DATA ---
 if "balance" not in st.session_state:
     bal, hist, wl = load_data(st.session_state.username)
     st.session_state.balance = bal
     st.session_state.history = hist
     st.session_state.watchlist = wl
 
-# --- CALCULATE PORTFOLIO & AVERAGE PRICE ---
 portfolio_data = []
 if not st.session_state.history.empty:
     df = st.session_state.history
@@ -121,10 +108,9 @@ if not st.session_state.history.empty:
 
 portfolio = pd.DataFrame(portfolio_data)
 
-# --- SIDEBAR ---
 with st.sidebar:
     st.sidebar.markdown(
-        "<h2 style='text-align: left; font-size: 24px;' class='main-logo'>Paper Trading Lab</h2>",
+        "<h2 style='text-align: left; font-size: 24px; font-family: \"Inter\", sans-serif;' class='main-logo'>Paper Trading Lab</h2>",
         unsafe_allow_html=True,
     )
     st.write(f"👤 Logged in as: **{st.session_state.username.upper()}**")
@@ -152,7 +138,6 @@ with st.sidebar:
                 columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
             )
 
-            # --- CLOUD WIPE ---
             update_balance(st.session_state.username, new_capital)
             supabase.table("trades").delete().eq(
                 "username", st.session_state.username
@@ -169,8 +154,9 @@ with st.sidebar:
         st.rerun()
 
 
-# --- MAIN INTERFACE ---
-tab_dashboard, tab_terminal = st.tabs(["📊 Trader Dashboard", "⚡ Market Terminal"])
+tab_dashboard, tab_terminal, tab_journal = st.tabs(
+    [" 📊 Trader Dashboard ", " ⚡ Market Terminal ", " 📜 Trade Journal "]
+)
 
 with tab_terminal:
     terminal.render_terminal(
@@ -178,4 +164,7 @@ with tab_terminal:
     )
 
 with tab_dashboard:
-    dashboard.render_dashboard()
+    dashboard.render_dashboard(portfolio)
+
+with tab_journal:
+    journal.render_journal()
