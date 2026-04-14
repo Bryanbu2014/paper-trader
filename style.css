@@ -65,3 +65,47 @@
 @keyframes shine {
     to { background-position: 200% center; }
 }
+
+[data-baseweb="tab"] {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+
+[data-baseweb="tab"]:hover {
+    color: white !important; 
+    text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.8) !important; 
+    transform: scale(1.1) translateY(-2px) !important; 
+    border-radius: 8px !important;
+}
+
+button[data-baseweb="tab"] {
+    padding-left: 30px !important;  
+    padding-right: 30px !important; 
+    margin-right: 0px !important;   
+}
+
+div[data-baseweb="tab-list"] {
+    width: auto !important;
+}
+
+.version-badge {
+    /* 1. The Background: Solid and dark so the gradient stands out */
+    background-color: #1a1a1a; 
+    border: 1px solid #333;
+    padding: 2px 8px;
+    border-radius: 4px;
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 10px;
+
+    /* 2. The Text: Apply your exact logo gradient here */
+    background-image: linear-gradient(to right, #00C9FF, #92FE9D, #00C9FF);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: shine 3s linear infinite;
+
+    /* 3. The Font: Matching your logo's 'Courier New' look */
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 900;
+    font-size: 14px;
+}
