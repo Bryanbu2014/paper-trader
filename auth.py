@@ -25,7 +25,7 @@ def check_password():
             """
             <div style='text-align: center; margin-bottom: 30px;'>
                 <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
-                    Paper Trading Lab <span class='version-badge'>v1.0.0</span>
+                    Paper Trading Lab</br><span class='version-badge'>v1.0.0</span>
                 </h1>
             </div>
             """,
@@ -88,6 +88,17 @@ def check_password():
             )
 
         with st.expander("🚀 What's New?"):
+            with st.expander("v1.0.1"):
+                st.markdown(
+                    """
+                    ### New Features ✨
+                    - Implemented daily performance history to track daily gain/loss
+                    - Included transaction fee for each buy/sell transaction
+                    ### UI/UX Improvements 💄
+                    - Moved version badge one line below the title
+
+                    """
+                )
             with st.expander("v1.0.0"):
                 st.markdown(
                     """

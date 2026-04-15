@@ -142,6 +142,9 @@ with st.sidebar:
             supabase.table("trades").delete().eq(
                 "username", st.session_state.username
             ).execute()
+            supabase.table("net_worth_history").delete().eq(
+                "username", st.session_state.username
+            ).execute()
 
             st.rerun()
 
@@ -153,7 +156,6 @@ with st.sidebar:
         del st.session_state.watchlist
         st.rerun()
 
-
 tab_dashboard, tab_terminal, tab_journal = st.tabs(
     [" 📊 Trader Dashboard ", " ⚡ Market Terminal ", " 📜 Trade Journal "]
 )
@@ -164,7 +166,8 @@ with tab_terminal:
     )
 
 with tab_dashboard:
-    dashboard.render_dashboard(portfolio)
+    # We added 'supabase' here so the dashboard can save your daily history!
+    dashboard.render_dashboard(portfolio, supabase)
 
 with tab_journal:
     journal.render_journal()

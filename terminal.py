@@ -111,9 +111,15 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                 c1, c2 = st.columns([1, 1], vertical_alignment="center")
                 with c1:
                     qty = st.number_input("Quantity to Trade", min_value=1, step=1)
-                with c2:
+                    # Added Transaction Fee Input here
+                    fee = st.number_input(
+                        "Transaction Fee ($)", min_value=0.0, value=1.0, step=0.5
+                    )
+                with c1:
                     total = qty * current_price
-                    st.metric(label="", value=f"${total:,.2f}")
+                    st.metric(
+                        label="Total Before Transaction Fee", value=f"${total:,.2f}"
+                    )
 
                 shares_owned = 0
                 buy_in_price = "$0.00"
@@ -133,15 +139,19 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                 btn_buy, btn_sell = st.columns(2)
 
                 if btn_buy.button("🟢 BUY SHARES", use_container_width=True):
-                    if st.session_state.balance >= total:
-                        st.session_state.balance -= total
+                    total_cost = total + fee  # Factoring in the fee
+
+                    if st.session_state.balance >= total_cost:
+                        st.session_state.balance -= total_cost
                         new_trade = {
                             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "Ticker": ticker,
                             "Action": "BUY",
                             "Quantity": qty,
                             "Price": round(current_price, 2),
-                            "Total": round(total, 2),
+                            "Total": round(
+                                total_cost, 2
+                            ),  # Record the actual cash spent including fee
                         }
                         st.session_state.history = pd.concat(
                             [st.session_state.history, pd.DataFrame([new_trade])],
@@ -153,21 +163,27 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                         )
                         add_trade_to_db(st.session_state.username, new_trade)
 
-                        st.success(f"Bought {qty} shares of {ticker}!")
+                        st.success(
+                            f"Bought {qty} shares of {ticker}! (Fee: ${fee:,.2f})"
+                        )
                         st.rerun()
                     else:
                         st.error("Not enough cash!")
 
                 if btn_sell.button("🔴 SELL SHARES", use_container_width=True):
                     if shares_owned >= qty:
-                        st.session_state.balance += total
+                        total_revenue = total - fee  # Deducting the fee from earnings
+
+                        st.session_state.balance += total_revenue
                         new_trade = {
                             "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                             "Ticker": ticker,
                             "Action": "SELL",
                             "Quantity": qty,
                             "Price": round(current_price, 2),
-                            "Total": round(total, 2),
+                            "Total": round(
+                                total_revenue, 2
+                            ),  # Record the actual cash received after fee
                         }
                         st.session_state.history = pd.concat(
                             [st.session_state.history, pd.DataFrame([new_trade])],
@@ -179,7 +195,7 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                         )
                         add_trade_to_db(st.session_state.username, new_trade)
 
-                        st.success(f"Sold {qty} shares of {ticker}!")
+                        st.success(f"Sold {qty} shares of {ticker}! (Fee: ${fee:,.2f})")
                         st.rerun()
                     else:
                         st.error(f"You only own {shares_owned} shares.")
