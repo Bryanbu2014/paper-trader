@@ -55,7 +55,32 @@ def check_password():
                     else:
                         st.error("Incorrect username or password.")
 
-        # Request Access Toggle
+        with st.expander("🚀 What's New?"):
+            with st.expander("v1.0.1"):
+                st.markdown(
+                    """
+                    ### New Features ✨
+                    - Implemented daily performance history to track daily gain/loss
+                    - Included transaction fee for each buy/sell transaction
+                    - Created confirmation for item deletion
+                    ### UI/UX Improvements 💄
+                    - Moved version badge one line below the title
+                    - Included light mode
+                    - Swapped __What's New?__ view with __Request Access__ view on login page
+                    """
+                )
+            with st.expander("v1.0.0"):
+                st.markdown(
+                    """
+                    - Deployed the app to the internet
+                    - Connected the app to a database
+                    - Added a login screen for only authorized users
+                    - Built the screen for buying and selling stocks
+                    - Created dashboard
+                    - Added a simple history list
+                    """
+                )
+
         with st.expander("🔑 Request Access"):
             st.write(
                 "This trading terminal is currently in **Private Beta**. Want to start your own paper trading journey?"
@@ -86,29 +111,5 @@ def check_password():
                 * **Note:** You are not allowed to change your password.
                 """
             )
-
-        with st.expander("🚀 What's New?"):
-            with st.expander("v1.0.1"):
-                st.markdown(
-                    """
-                    ### New Features ✨
-                    - Implemented daily performance history to track daily gain/loss
-                    - Included transaction fee for each buy/sell transaction
-                    ### UI/UX Improvements 💄
-                    - Moved version badge one line below the title
-
-                    """
-                )
-            with st.expander("v1.0.0"):
-                st.markdown(
-                    """
-                    - Deployed the app to the internet
-                    - Connected the app to a database
-                    - Added a login screen for only authorized users
-                    - Built the screen for buying and selling stocks
-                    - Created dashboard
-                    - Added a simple history list
-                    """
-                )
 
     return False

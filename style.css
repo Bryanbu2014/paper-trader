@@ -35,6 +35,20 @@
     animation: gentle-breathe 1.5s infinite alternate ease-in-out;
 }
 
+/* Stop the pop-up dialog from fading when buttons are clicked */
+[data-testid="stModal"] div,
+[data-testid="stDialog"] div {
+    opacity: 1 !important;
+    transition: none !important;
+    animation: none !important;
+}
+
+/* Specifically target Streamlit's "stale" data fading */
+[data-testid="stModal"] [data-stale="true"] {
+    opacity: 1 !important;
+    filter: none !important;
+}
+
 @keyframes gentle-breathe {
     0% { opacity: 0.5; border-color: #4A4B50; }
     100% { opacity: 1; border-color: #888C96; }
@@ -71,8 +85,8 @@
 }
 
 [data-baseweb="tab"]:hover {
-    color: white !important; 
-    text-shadow: 0px 0px 10px rgba(255, 255, 255, 0.8) !important; 
+    /* color: rgb(245, 117, 117) !important; 
+    text-shadow: 0px 0px 10px rgba(245, 117, 117, 0.8) !important;  */
     transform: scale(1.1) translateY(-2px) !important; 
     border-radius: 8px !important;
 }
@@ -108,4 +122,8 @@ div[data-baseweb="tab-list"] {
     font-family: 'Courier New', Courier, monospace;
     font-weight: 900;
     font-size: 14px;
+}
+
+.block-container {
+    padding-top: 2rem !important; 
 }

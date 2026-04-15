@@ -153,9 +153,12 @@ def render_dashboard(portfolio, supabase):
 
             hist_df["Daily Gain/Loss"] = hist_df["net_worth"].diff()
 
-            starting_capital = 100000.0
+            dynamic_starting_capital = (
+                st.session_state.balance + total_buys - total_sells
+            )
+
             hist_df["Daily Gain/Loss"] = hist_df["Daily Gain/Loss"].fillna(
-                hist_df["net_worth"] - starting_capital
+                hist_df["net_worth"] - dynamic_starting_capital
             )
 
             hist_df["Net Worth"] = hist_df["net_worth"].apply(lambda x: f"${x:,.2f}")

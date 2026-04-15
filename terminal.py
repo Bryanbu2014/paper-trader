@@ -4,6 +4,23 @@ import streamlit as st
 import yfinance as yf
 
 
+@st.dialog("⚠️ Confirm Clear Watchlist")
+def confirm_clear_dialog(update_watchlist_func):
+    st.error("Are you sure you want to delete every ticker from your watchlist?")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Cancel", use_container_width=True):
+            st.rerun()
+
+    with col2:
+        if st.button("Yes, Clear It", type="primary", use_container_width=True):
+            # Wipe the list and update the database
+            st.session_state.watchlist = []
+            update_watchlist_func(st.session_state.username, st.session_state.watchlist)
+            st.rerun()
+
+
 def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist):
     col_watch, col_trade = st.columns([1, 2], gap="large")
 
@@ -69,17 +86,10 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                         )
                         st.rerun()
 
-                st.divider()
                 if st.button(
-                    "🗑️ Clear Entire Watchlist",
-                    type="primary",
-                    use_container_width=True,
+                    "🗑️ Clear Entire Watchlist", use_container_width=True, type="primary"
                 ):
-                    st.session_state.watchlist = []
-                    update_watchlist(
-                        st.session_state.username, st.session_state.watchlist
-                    )
-                    st.rerun()
+                    confirm_clear_dialog(update_watchlist)
 
     with col_trade:
         with st.container(border=True):

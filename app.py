@@ -75,6 +75,38 @@ def update_watchlist(username, watchlist):
         supabase.table("watchlists").insert(records).execute()
 
 
+# The decorator tells Streamlit this is a pop-up window!
+@st.dialog("⚠️ Confirm Account Reset")
+def confirm_reset_dialog(new_capital):
+    st.error(
+        "Are you absolutely sure? This will delete all your trades and daily history. This cannot be undone."
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+        # If they cancel, we just rerun the app to close the pop-up
+        if st.button("Nononono", use_container_width=True):
+            st.rerun()
+
+    with col2:
+        # If they confirm, we run the destructive code
+        if st.button("Yes, Clear Everything", type="primary", use_container_width=True):
+            st.session_state.balance = new_capital
+            st.session_state.history = pd.DataFrame(
+                columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
+            )
+
+            update_balance(st.session_state.username, new_capital)
+            supabase.table("trades").delete().eq(
+                "username", st.session_state.username
+            ).execute()
+            supabase.table("net_worth_history").delete().eq(
+                "username", st.session_state.username
+            ).execute()
+
+            st.rerun()
+
+
 if "balance" not in st.session_state:
     bal, hist, wl = load_data(st.session_state.username)
     st.session_state.balance = bal
@@ -132,21 +164,9 @@ with st.sidebar:
             "Starting Capital ($)", min_value=100.0, value=100000.0, step=1000.0
         )
 
-        if st.button("⚠️ Restart Account", type="primary", use_container_width=True):
-            st.session_state.balance = new_capital
-            st.session_state.history = pd.DataFrame(
-                columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
-            )
-
-            update_balance(st.session_state.username, new_capital)
-            supabase.table("trades").delete().eq(
-                "username", st.session_state.username
-            ).execute()
-            supabase.table("net_worth_history").delete().eq(
-                "username", st.session_state.username
-            ).execute()
-
-            st.rerun()
+        # When clicked, it just opens the pop-up and passes the new_capital number to it
+        if st.button("⚠️ Restart Account", use_container_width=True, type="primary"):
+            confirm_reset_dialog(new_capital)
 
     if st.button("🚪 Log Out", use_container_width=True):
         st.session_state.logged_in = False
