@@ -100,28 +100,35 @@ div[data-baseweb="tab-list"] {
 }
 
 .version-badge {
-    /* 1. The Background: Solid and dark so the gradient stands out */
-    background-color: #1a1a1a; 
-    border: 1px solid #333;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background-image: linear-gradient(to right, #00C9FF, #92FE9D, #00C9FF);
+    background-size: 200% auto;
+    animation: shine 3s linear infinite;
+
+    color: #000000 !important; 
+    font-family: 'Courier New', Courier, monospace;
+    font-weight: 900;
+    font-size: 14px;
+
+    padding: 2px 10px;
+    border-radius: 6px;
     display: inline-block;
     vertical-align: middle;
     margin-left: 10px;
 
-    /* 2. The Text: Apply your exact logo gradient here */
-    background-image: linear-gradient(to right, #00C9FF, #92FE9D, #00C9FF);
-    background-size: 200% auto;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    animation: shine 3s linear infinite;
-
-    /* 3. The Font: Matching your logo's 'Courier New' look */
-    font-family: 'Courier New', Courier, monospace;
-    font-weight: 900;
-    font-size: 14px;
+    -webkit-background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 .block-container {
     padding-top: 2rem !important; 
+}
+
+
+.header-anchor {
+    display: none !important;
+}
+
+[data-testid="stHeaderActionElements"] {
+    display: none !important;
 }

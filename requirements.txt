@@ -2,4 +2,5 @@ streamlit
 yfinance
 pandas
 streamlit-autorefresh
+pytz
 supabase

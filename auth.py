@@ -25,7 +25,7 @@ def check_password():
             """
             <div style='text-align: center; margin-bottom: 30px;'>
                 <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
-                    Paper Trading Lab</br><span class='version-badge'>v1.1.0</span>
+                    Paper Trading Lab</br><span class='version-badge'>TBD</span>
                 </h1>
             </div>
             """,
@@ -56,6 +56,25 @@ def check_password():
                         st.error("Incorrect username or password.")
 
         with st.expander("🚀 What's New?"):
+            with st.expander("vMajor.Minor.Patch"):
+                st.info("Released: TBD")
+                st.markdown(
+                    """
+                    ### New Features ✨
+                    - Integrated a real-time clock in the sidebar that automatically syncs with the user's current location
+                    - The app now automatically detects the user's browser's timezone to ensure all data is relevant to the user
+
+                    ### Performance & Architecture 🚀
+
+                    ### Bug Fixes 🛠️
+                    - Fixed a bug where trade success messages ("Bought/Sold") disappeared instantly
+                    - Corrected the 2-hour discrepancy between the server (UTC) and local time (CEST).
+
+                    ### UI/UX Improvements 💄
+                    - Removed distracting anchor links from headers
+                    - Upgraded the version badge with a smooth animated background
+                    """
+                )
             with st.expander("v1.1.0"):
                 st.info("Released: April 16, 2026")
                 st.markdown(
@@ -84,7 +103,7 @@ def check_password():
                     """
                 )
             with st.expander("v1.0.0"):
-                st.info("Released: 14.04.2026")
+                st.info("Released: April 14, 2026")
                 st.markdown(
                     """
                     - Deployed the app to the internet

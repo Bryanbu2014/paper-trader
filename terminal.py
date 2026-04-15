@@ -1,14 +1,11 @@
 from datetime import datetime, timezone
-import pytz  # Ensure this is in your requirements.txt!
+import pytz
 import pandas as pd
 import streamlit as st
 import yfinance as yf
 import database
 
 
-# ---------------------------------------------------------
-# FRAGMENT 1: THE WATCHLIST
-# ---------------------------------------------------------
 @st.fragment
 def render_watchlist():
     with st.container(border=True):
@@ -17,6 +14,7 @@ def render_watchlist():
 
         if st.session_state.watchlist:
             for t in st.session_state.watchlist:
+
                 price = st.session_state.live_prices.get(t)
 
                 if price is not None:
@@ -103,9 +101,6 @@ def render_watchlist():
                     st.rerun()
 
 
-# ---------------------------------------------------------
-# FRAGMENT 2: THE TRADE PANEL
-# ---------------------------------------------------------
 @st.fragment
 def render_trade_panel(portfolio):
     with st.container(border=True):
@@ -162,12 +157,8 @@ def render_trade_panel(portfolio):
 
             btn_buy, btn_sell = st.columns(2)
 
-            # --- DYNAMIC TIME CALCULATION ---
-            # Detect user's timezone from browser (default to UTC if unknown)
             user_tz_name = st.context.timezone or "UTC"
             user_tz = pytz.timezone(user_tz_name)
-
-            # Get UTC time and convert to User's local time
             now_utc = datetime.now(timezone.utc)
             local_now = now_utc.astimezone(user_tz)
             timestamp_str = local_now.strftime("%Y-%m-%d %H:%M:%S")
@@ -178,7 +169,7 @@ def render_trade_panel(portfolio):
                 if st.session_state.balance >= total_cost:
                     st.session_state.balance -= total_cost
                     new_trade = {
-                        "Timestamp": timestamp_str,  # <-- Using the local timestamp
+                        "Timestamp": timestamp_str,
                         "Ticker": ticker,
                         "Action": "BUY",
                         "Quantity": qty,
@@ -194,7 +185,10 @@ def render_trade_panel(portfolio):
                         st.session_state.username, st.session_state.balance
                     )
                     database.add_trade(st.session_state.username, new_trade)
-                    st.success(f"Bought {qty} shares of {ticker}!")
+
+                    st.session_state.trade_msg = (
+                        f"✅ Successfully bought {qty} shares of {ticker}!"
+                    )
                     st.rerun()
                 else:
                     st.error("Not enough cash!")
@@ -204,7 +198,7 @@ def render_trade_panel(portfolio):
                     total_revenue = total - fee
                     st.session_state.balance += total_revenue
                     new_trade = {
-                        "Timestamp": timestamp_str,  # <-- Using the local timestamp
+                        "Timestamp": timestamp_str,
                         "Ticker": ticker,
                         "Action": "SELL",
                         "Quantity": qty,
@@ -220,7 +214,10 @@ def render_trade_panel(portfolio):
                         st.session_state.username, st.session_state.balance
                     )
                     database.add_trade(st.session_state.username, new_trade)
-                    st.success(f"Sold {qty} shares of {ticker}!")
+
+                    st.session_state.trade_msg = (
+                        f"✅ Successfully sold {qty} shares of {ticker}!"
+                    )
                     st.rerun()
                 else:
                     st.error(f"You only own {shares_owned} shares.")
@@ -229,8 +226,15 @@ def render_trade_panel(portfolio):
 
 
 def render_terminal(portfolio):
+
+    if "trade_msg" in st.session_state:
+        st.success(st.session_state.trade_msg)
+        del st.session_state.trade_msg
+
     col_watch, col_trade = st.columns([1, 2], gap="large")
+
     with col_watch:
         render_watchlist()
+
     with col_trade:
         render_trade_panel(portfolio)
