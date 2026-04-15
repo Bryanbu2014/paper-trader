@@ -20,6 +20,8 @@ def render_journal():
 
             display_df["Price"] = display_df["Price"].apply(lambda x: f"${x:,.2f}")
 
+            display_df = display_df.rename(columns={"Price": "Execution Price"})
+
             display_df = display_df.iloc[::-1]
 
             def color_trade(val):

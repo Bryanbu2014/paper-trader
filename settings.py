@@ -1,28 +1,30 @@
 import streamlit as st
+import database  # Import our new database file!
 
 
 @st.dialog("⚙️ Settings")
-def render_settings(update_settings_func, wipe_account_func):
-
-    def save_data():
-        new_fee = st.session_state.new_fee_input
-        st.session_state.transaction_fee = new_fee
-        update_settings_func(st.session_state.username, new_fee)
-        st.session_state.close_settings_dialog = True
+def render_settings(wipe_account_func):
+    # We only need the wipe_account_func now, because it handles
+    # resetting the session state memory back in app.py
 
     st.subheader("Trading Rules")
 
-    st.number_input(
+    # Removed the on_change trigger so the user has to click the Save button
+    new_fee = st.number_input(
         "Transaction Fee ($)",
         min_value=0.0,
         value=float(st.session_state.transaction_fee),
         step=0.5,
         key="new_fee_input",
-        on_change=save_data,
     )
 
     if st.button("Save Settings", use_container_width=True):
-        save_data()
+        # 1. Update the app's memory
+        st.session_state.transaction_fee = new_fee
+        # 2. Tell the database to save it permanently
+        database.update_settings(st.session_state.username, new_fee)
+        # 3. Refresh the page (this automatically closes the dialog!)
+        st.rerun()
 
     st.divider()
 
@@ -45,7 +47,6 @@ def render_settings(update_settings_func, wipe_account_func):
         st.session_state.show_reset_warning = False
 
     if not st.session_state.show_reset_warning:
-
         st.button(
             "⚠️ Restart Account",
             type="primary",
@@ -62,10 +63,9 @@ def render_settings(update_settings_func, wipe_account_func):
         c1.button("Cancel", use_container_width=True, on_click=hide_warning)
 
         if c2.button("Yes, Wipe Everything", type="primary", use_container_width=True):
+            # Trigger the wipe function from app.py
             wipe_account_func(new_capital)
+            # Hide the warning for next time
             st.session_state.show_reset_warning = False
-            st.session_state.close_settings_dialog = True
-
-    if st.session_state.get("close_settings_dialog", False):
-        st.session_state.close_settings_dialog = False
-        st.rerun()
+            # Refresh the page to close the dialog
+            st.rerun()

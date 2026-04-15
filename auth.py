@@ -25,7 +25,7 @@ def check_password():
             """
             <div style='text-align: center; margin-bottom: 30px;'>
                 <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
-                    Paper Trading Lab</br><span class='version-badge'>v1.0.0</span>
+                    Paper Trading Lab</br><span class='version-badge'>v1.1.0</span>
                 </h1>
             </div>
             """,
@@ -56,20 +56,35 @@ def check_password():
                         st.error("Incorrect username or password.")
 
         with st.expander("🚀 What's New?"):
-            with st.expander("v1.0.1"):
+            with st.expander("v1.1.0"):
+                st.info("Released: April 16, 2026")
                 st.markdown(
                     """
                     ### New Features ✨
+                    - Introduced a dedicated Settings menu with a full account reset functionality
                     - Implemented daily performance history to track daily gain/loss
                     - Included transaction fee for each buy/sell transaction
-                    - Created confirmation for item deletion
+                    - Created inline confirmation for item deletion to prevent accidental clicks
+                    - Implemented __Settings__ page to allow user customized settings
+                    
+                    ### Performance & Architecture 🚀
+                    - Centralized live market data into a 'Single Source of Truth' to perfectly sync prices across all tabs
+                    - Optimized API requests with batch downloading to drastically improve app speed and prevent IP bans
+                    - Implemented independent UI fragments in the Market Terminal to prevent full-page reloads
+                    - Built a fail-safe data retrieval mechanism to guarantee uninterrupted live price feeds
+                    
                     ### UI/UX Improvements 💄
+                    - Applied custom CSS styling for a cleaner, more modern interface
+                    - Added dynamic color-coding to instantly distinguish profit (green) and loss (red)
+                    - Reorganized the Market Terminal layout for a much smoother trading experience
+                    - Standardized all financial metrics and portfolio values to a clean, 2-decimal-place format
                     - Moved version badge one line below the title
                     - Included light mode
                     - Swapped __What's New?__ view with __Request Access__ view on login page
                     """
                 )
             with st.expander("v1.0.0"):
+                st.info("Released: 14.04.2026")
                 st.markdown(
                     """
                     - Deployed the app to the internet

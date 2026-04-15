@@ -1,10 +1,10 @@
 from datetime import datetime
 import pandas as pd
 import streamlit as st
-import yfinance as yf
+import database
 
 
-def render_dashboard(portfolio, supabase):
+def render_dashboard(portfolio):
 
     if "history_limit" not in st.session_state:
         st.session_state.history_limit = 10
@@ -13,73 +13,50 @@ def render_dashboard(portfolio, supabase):
     total_market_value = 0.0
 
     if not portfolio.empty:
-        with st.spinner("Fetching live market prices..."):
-            for index, row in portfolio.iterrows():
-                ticker = row["Ticker"]
-                qty = row["Quantity"]
-                avg_price = float(row["Avg Price"].replace("$", "").replace(",", ""))
+        for index, row in portfolio.iterrows():
+            ticker = row["Ticker"]
+            qty = row["Quantity"]
+            avg_price = row["Raw Price"]
 
-                try:
-                    stock = yf.Ticker(ticker)
-                    live_price = stock.history(
-                        period="1d", interval="1m", prepost=True
-                    )["Close"].iloc[-1]
+            # Read instantly from the global whiteboard! No Yahoo API call needed!
+            live_price = st.session_state.live_prices.get(ticker)
 
-                    total_value = qty * live_price
-                    total_market_value += total_value
+            if live_price is not None:
+                total_value = qty * live_price
+                total_market_value += total_value
 
-                    total_cost = qty * avg_price
-                    profit = total_value - total_cost
+                total_cost = qty * avg_price
+                profit = total_value - total_cost
 
-                    if profit >= 0:
-                        worth_str = f"${total_value:,.2f} (+${profit:,.2f})"
-                    else:
-                        worth_str = f"${total_value:,.2f} (-${abs(profit):,.2f})"
+                if profit >= 0:
+                    worth_str = f"${total_value:,.2f} (+${profit:,.2f})"
+                else:
+                    worth_str = f"${total_value:,.2f} (-${abs(profit):,.2f})"
 
-                    holdings_data.append(
-                        {
-                            "Ticker": ticker,
-                            "Stock Amount": qty,
-                            "Buy-in Price": row["Avg Price"],
-                            "Live Price": f"${live_price:,.2f}",
-                            "Total Worth": worth_str,
-                        }
-                    )
-                except:
-                    holdings_data.append(
-                        {
-                            "Ticker": ticker,
-                            "Stock Amount": qty,
-                            "Buy-in Price": row["Avg Price"],
-                            "Live Price": "Error",
-                            "Total Worth": "Error",
-                        }
-                    )
+                holdings_data.append(
+                    {
+                        "Ticker": ticker,
+                        "Stock Amount": qty,
+                        "Buy-in Price": row["Avg Price"],
+                        "Live Price": f"${live_price:,.2f}",
+                        "Total Worth": worth_str,
+                    }
+                )
+            else:
+                holdings_data.append(
+                    {
+                        "Ticker": ticker,
+                        "Stock Amount": qty,
+                        "Buy-in Price": row["Avg Price"],
+                        "Live Price": "Error",
+                        "Total Worth": "Error",
+                    }
+                )
 
     current_total_value = st.session_state.balance + total_market_value
-
-    today = datetime.now().date().isoformat()
     username = st.session_state.username
 
-    check = (
-        supabase.table("net_worth_history")
-        .select("id")
-        .eq("username", username)
-        .eq("timestamp", today)
-        .execute()
-    )
-
-    if check.data:
-
-        row_id = check.data[0]["id"]
-        supabase.table("net_worth_history").update(
-            {"net_worth": current_total_value}
-        ).eq("id", row_id).execute()
-    else:
-
-        supabase.table("net_worth_history").insert(
-            {"username": username, "net_worth": current_total_value, "timestamp": today}
-        ).execute()
+    database.save_daily_net_worth(username, current_total_value)
 
     with st.container(border=True):
         st.subheader("Performance Overview")
@@ -139,18 +116,11 @@ def render_dashboard(portfolio, supabase):
     with st.container(border=True):
         st.subheader("Daily Performance History")
 
-        history_res = (
-            supabase.table("net_worth_history")
-            .select("timestamp, net_worth")
-            .eq("username", username)
-            .execute()
-        )
+        hist_df = database.get_net_worth_history(username)
 
-        if history_res.data:
-            hist_df = pd.DataFrame(history_res.data)
+        if hist_df is not None and not hist_df.empty:
 
             hist_df = hist_df.sort_values("timestamp")
-
             hist_df["Daily Gain/Loss"] = hist_df["net_worth"].diff()
 
             dynamic_starting_capital = (
@@ -171,15 +141,12 @@ def render_dashboard(portfolio, supabase):
                 return "$0.00"
 
             hist_df["Daily Gain/Loss"] = hist_df["Daily Gain/Loss"].apply(format_pnl)
-
             hist_df = hist_df.sort_values("timestamp", ascending=False)
-
             total_rows = len(hist_df)
 
             display_df = hist_df[["timestamp", "Net Worth", "Daily Gain/Loss"]].rename(
                 columns={"timestamp": "Date"}
             )
-
             display_df = display_df.head(st.session_state.history_limit)
 
             def color_daily_pnl(val):
