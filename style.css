@@ -35,7 +35,6 @@
     animation: gentle-breathe 1.5s infinite alternate ease-in-out;
 }
 
-/* Stop the pop-up dialog from fading when buttons are clicked */
 [data-testid="stModal"] div,
 [data-testid="stDialog"] div {
     opacity: 1 !important;
@@ -43,7 +42,6 @@
     animation: none !important;
 }
 
-/* Specifically target Streamlit's "stale" data fading */
 [data-testid="stModal"] [data-stale="true"] {
     opacity: 1 !important;
     filter: none !important;

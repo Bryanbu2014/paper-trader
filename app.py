@@ -154,7 +154,7 @@ with st.sidebar:
     with st.container(border=True):
         st.subheader("Your Stocks")
         if not portfolio.empty:
-            st.dataframe(portfolio.set_index("Ticker"), use_container_width=True)
+            st.dataframe(portfolio, use_container_width=True, hide_index=True)
         else:
             st.write("*No stocks owned yet.*")
 
