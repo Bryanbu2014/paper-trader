@@ -121,10 +121,9 @@ def render_terminal(portfolio, update_balance, add_trade_to_db, update_watchlist
                 c1, c2 = st.columns([1, 1], vertical_alignment="center")
                 with c1:
                     qty = st.number_input("Quantity to Trade", min_value=1, step=1)
-                    # Added Transaction Fee Input here
-                    fee = st.number_input(
-                        "Transaction Fee ($)", min_value=0.0, value=1.0, step=0.5
-                    )
+                    # Pull the fee automatically from the user's saved settings
+                    fee = st.session_state.transaction_fee
+                    st.write(f"**Transaction Fee:** ${fee:,.2f}")
                 with c1:
                     total = qty * current_price
                     st.metric(

@@ -7,6 +7,7 @@ import auth
 import dashboard
 import journal
 import terminal
+import setting
 
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
 
@@ -53,7 +54,21 @@ def load_data(username):
     watchlist = [row["ticker"] for row in wl_res.data] if wl_res.data else []
     watchlist.sort()
 
-    return balance, history, watchlist
+    fee_res = (
+        supabase.table("user_settings")
+        .select("transaction_fee")
+        .eq("username", username)
+        .execute()
+    )
+    fee = fee_res.data[0]["transaction_fee"] if fee_res.data else 1.0
+
+    return balance, history, watchlist, fee
+
+
+def update_settings(username, fee):
+    supabase.table("user_settings").upsert(
+        {"username": username, "transaction_fee": fee}
+    ).execute()
 
 
 def update_balance(username, balance):
@@ -75,43 +90,28 @@ def update_watchlist(username, watchlist):
         supabase.table("watchlists").insert(records).execute()
 
 
-# The decorator tells Streamlit this is a pop-up window!
-@st.dialog("⚠️ Confirm Account Reset")
-def confirm_reset_dialog(new_capital):
-    st.error(
-        "Are you absolutely sure? This will delete all your trades and daily history. This cannot be undone."
+def wipe_account_data(new_capital):
+
+    st.session_state.balance = new_capital
+    st.session_state.history = pd.DataFrame(
+        columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
     )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        # If they cancel, we just rerun the app to close the pop-up
-        if st.button("Nononono", use_container_width=True):
-            st.rerun()
-
-    with col2:
-        # If they confirm, we run the destructive code
-        if st.button("Yes, Clear Everything", type="primary", use_container_width=True):
-            st.session_state.balance = new_capital
-            st.session_state.history = pd.DataFrame(
-                columns=["Timestamp", "Ticker", "Action", "Quantity", "Price", "Total"]
-            )
-
-            update_balance(st.session_state.username, new_capital)
-            supabase.table("trades").delete().eq(
-                "username", st.session_state.username
-            ).execute()
-            supabase.table("net_worth_history").delete().eq(
-                "username", st.session_state.username
-            ).execute()
-
-            st.rerun()
+    update_balance(st.session_state.username, new_capital)
+    supabase.table("trades").delete().eq(
+        "username", st.session_state.username
+    ).execute()
+    supabase.table("net_worth_history").delete().eq(
+        "username", st.session_state.username
+    ).execute()
 
 
 if "balance" not in st.session_state:
-    bal, hist, wl = load_data(st.session_state.username)
+    bal, hist, wl, fee = load_data(st.session_state.username)
     st.session_state.balance = bal
     st.session_state.history = hist
     st.session_state.watchlist = wl
+    st.session_state.transaction_fee = fee
 
 portfolio_data = []
 if not st.session_state.history.empty:
@@ -158,15 +158,9 @@ with st.sidebar:
         else:
             st.write("*No stocks owned yet.*")
 
-    with st.container(border=True):
-        st.subheader("Account Settings")
-        new_capital = st.number_input(
-            "Starting Capital ($)", min_value=100.0, value=100000.0, step=1000.0
-        )
+    if st.button("⚙️ Settings", use_container_width=True):
 
-        # When clicked, it just opens the pop-up and passes the new_capital number to it
-        if st.button("⚠️ Restart Account", use_container_width=True, type="primary"):
-            confirm_reset_dialog(new_capital)
+        setting.render_settings(update_settings, wipe_account_data)
 
     if st.button("🚪 Log Out", use_container_width=True):
         st.session_state.logged_in = False
@@ -174,6 +168,8 @@ with st.sidebar:
         del st.session_state.balance
         del st.session_state.history
         del st.session_state.watchlist
+        if "transaction_fee" in st.session_state:
+            del st.session_state.transaction_fee
         st.rerun()
 
 tab_dashboard, tab_terminal, tab_journal = st.tabs(
@@ -186,7 +182,6 @@ with tab_terminal:
     )
 
 with tab_dashboard:
-    # We added 'supabase' here so the dashboard can save your daily history!
     dashboard.render_dashboard(portfolio, supabase)
 
 with tab_journal:
