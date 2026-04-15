@@ -10,6 +10,9 @@ import terminal
 import settings
 import database
 
+from datetime import datetime, timezone
+import pytz
+
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
 
 
@@ -69,10 +72,7 @@ if not st.session_state.history.empty:
 
 portfolio = pd.DataFrame(portfolio_data)
 
-# ---------------------------------------------------------
-# NEW: THE SINGLE SOURCE OF TRUTH (MASTER FETCHER)
-# ---------------------------------------------------------
-# Combine everything you own AND everything you watch into one list
+
 all_tickers_to_fetch = set(st.session_state.watchlist)
 if not portfolio.empty:
     all_tickers_to_fetch.update(portfolio["Ticker"].tolist())
@@ -91,7 +91,7 @@ if all_tickers_to_fetch:
                 val = close_data.dropna().iloc[-1]
             live_prices[t] = round(float(val), 2)
         except Exception:
-            # Fallback for individual stock if batch fails
+
             try:
                 raw_live = (
                     yf.Ticker(t)
@@ -102,11 +102,10 @@ if all_tickers_to_fetch:
             except:
                 live_prices[t] = None
 
-    # Write the fresh prices to the global "whiteboard"
     st.session_state.live_prices = live_prices
 else:
     st.session_state.live_prices = {}
-# ---------------------------------------------------------
+
 
 with st.sidebar:
     st.sidebar.markdown(
@@ -114,6 +113,13 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.write(f"👤 Logged in as: **{st.session_state.username.upper()}**")
+
+    user_tz_name = st.context.timezone or "UTC"
+    user_tz = pytz.timezone(user_tz_name)
+    local_now = datetime.now(timezone.utc).astimezone(user_tz)
+
+    current_time = local_now.strftime("%H:%M")
+    st.write(f"🕒 Local Time: **{current_time}** ({user_tz_name})")
 
     with st.container(border=True):
         st.header("Wallet")
