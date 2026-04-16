@@ -1,6 +1,7 @@
 from datetime import datetime
 
 import pandas as pd
+import pytz
 import streamlit as st
 from supabase import Client, create_client
 
@@ -77,7 +78,14 @@ def wipe_account_data(username, new_capital):
 
 
 def save_daily_net_worth(username, current_total_value):
-    today = datetime.now().date().isoformat()
+    user_tz_name = st.context.timezone or "UTC"
+    user_tz = pytz.timezone(user_tz_name)
+
+    now_utc = datetime.now(timezone.utc)
+    local_now = now_utc.astimezone(user_tz)
+
+    today = local_now.date().isoformat()
+
     check = (
         supabase.table("net_worth_history")
         .select("id")
