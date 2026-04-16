@@ -1,8 +1,10 @@
 from datetime import datetime, timezone
-import pytz
+
 import pandas as pd
+import pytz
 import streamlit as st
 import yfinance as yf
+
 import database
 
 
@@ -221,15 +223,16 @@ def render_trade_panel(portfolio):
                     st.rerun()
                 else:
                     st.error(f"You only own {shares_owned} shares.")
+
+            if "trade_msg" in st.session_state:
+                st.success(st.session_state.trade_msg)
+                del st.session_state.trade_msg
+
         else:
             st.info("Enter a valid target ticker above to enable trading.")
 
 
 def render_terminal(portfolio):
-
-    if "trade_msg" in st.session_state:
-        st.success(st.session_state.trade_msg)
-        del st.session_state.trade_msg
 
     col_watch, col_trade = st.columns([1, 2], gap="large")
 

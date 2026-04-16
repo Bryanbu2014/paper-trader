@@ -32,7 +32,6 @@ def check_password():
             unsafe_allow_html=True,
         )
 
-        # Login Form Container
         with st.container(border=True):
             st.title("⛔ Restricted Access")
             st.write("Please log in to your personal trading account.")
@@ -63,12 +62,15 @@ def check_password():
                     ### New Features ✨
                     - Integrated a real-time clock in the sidebar that automatically syncs with the user's current location
                     - The app now automatically detects the user's browser's timezone to ensure all data is relevant to the user
+                    - Added Unrealized and Realized Profit/Loss (P/L) tracking to the Performance Overview panel
+                    - Included a new daily breakdown of Realized Gain/Loss in the Daily Performance History panel
 
                     ### Performance & Architecture 🚀
 
                     ### Bug Fixes 🛠️
                     - Fixed a bug where trade success messages ("Bought/Sold") disappeared instantly
                     - Corrected the 2-hour discrepancy between the server (UTC) and local time (CEST).
+                    - Fixed a math bug where the avg buy-in price for stocks was incorrect because it included old, sold shares
 
                     ### UI/UX Improvements 💄
                     - Removed distracting anchor links from headers

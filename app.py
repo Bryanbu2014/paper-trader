@@ -1,17 +1,17 @@
+from datetime import datetime, timezone
+
 import pandas as pd
+import pytz
 import streamlit as st
 import yfinance as yf
 from streamlit_autorefresh import st_autorefresh
 
 import auth
 import dashboard
-import journal
-import terminal
-import settings
 import database
-
-from datetime import datetime, timezone
-import pytz
+import journal
+import settings
+import terminal
 
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
 
@@ -46,20 +46,38 @@ def handle_account_wipe(new_capital):
 
 portfolio_data = []
 if not st.session_state.history.empty:
-    df = st.session_state.history
+
+    df = st.session_state.history.sort_values(by="Timestamp")
+
     for t in df["Ticker"].unique():
         ticker_df = df[df["Ticker"] == t]
-        buys = ticker_df[ticker_df["Action"] == "BUY"]
-        sells = ticker_df[ticker_df["Action"] == "SELL"]
 
-        total_bought = buys["Quantity"].sum() if not buys.empty else 0
-        total_sold = sells["Quantity"].sum() if not sells.empty else 0
-        current_qty = total_bought - total_sold
+        current_qty = 0
+        current_total_cost = 0.0
+
+        for _, row in ticker_df.iterrows():
+            action = row["Action"]
+            qty = row["Quantity"]
+            price = row["Price"]
+
+            if action == "BUY":
+
+                current_qty += qty
+                current_total_cost += qty * price
+
+            elif action == "SELL":
+                if current_qty > 0:
+
+                    avg_cost_before_sale = current_total_cost / current_qty
+
+                    current_qty -= qty
+                    current_total_cost -= avg_cost_before_sale * qty
+
+                    if current_qty == 0:
+                        current_total_cost = 0.0
 
         if current_qty > 0:
-            total_spent_on_buys = (buys["Quantity"] * buys["Price"]).sum()
-            raw_avg = total_spent_on_buys / total_bought if total_bought > 0 else 0
-            avg_buy_price = round(raw_avg, 2)
+            avg_buy_price = round(current_total_cost / current_qty, 2)
 
             portfolio_data.append(
                 {
@@ -71,7 +89,6 @@ if not st.session_state.history.empty:
             )
 
 portfolio = pd.DataFrame(portfolio_data)
-
 
 all_tickers_to_fetch = set(st.session_state.watchlist)
 if not portfolio.empty:
@@ -119,7 +136,7 @@ with st.sidebar:
     local_now = datetime.now(timezone.utc).astimezone(user_tz)
 
     current_time = local_now.strftime("%H:%M")
-    st.write(f"🕒 Local Time: **{current_time}** ({user_tz_name})")
+    st.write(f"🕒 Local time: **{current_time}** ({user_tz_name})")
 
     with st.container(border=True):
         st.header("Wallet")

@@ -1,15 +1,13 @@
 import streamlit as st
-import database  # Import our new database file!
+
+import database
 
 
 @st.dialog("⚙️ Settings")
 def render_settings(wipe_account_func):
-    # We only need the wipe_account_func now, because it handles
-    # resetting the session state memory back in app.py
 
     st.subheader("Trading Rules")
 
-    # Removed the on_change trigger so the user has to click the Save button
     new_fee = st.number_input(
         "Transaction Fee ($)",
         min_value=0.0,
@@ -19,11 +17,8 @@ def render_settings(wipe_account_func):
     )
 
     if st.button("Save Settings", use_container_width=True):
-        # 1. Update the app's memory
         st.session_state.transaction_fee = new_fee
-        # 2. Tell the database to save it permanently
         database.update_settings(st.session_state.username, new_fee)
-        # 3. Refresh the page (this automatically closes the dialog!)
         st.rerun()
 
     st.divider()
@@ -63,9 +58,6 @@ def render_settings(wipe_account_func):
         c1.button("Cancel", use_container_width=True, on_click=hide_warning)
 
         if c2.button("Yes, Wipe Everything", type="primary", use_container_width=True):
-            # Trigger the wipe function from app.py
             wipe_account_func(new_capital)
-            # Hide the warning for next time
             st.session_state.show_reset_warning = False
-            # Refresh the page to close the dialog
             st.rerun()
