@@ -70,7 +70,7 @@ def check_password():
 
                     ### Bug Fixes 🛠️
                     - Fixed a bug where trade success messages ("Bought/Sold") disappeared instantly
-                    - Corrected the 2-hour discrepancy between the server (UTC) and local time (CEST).
+                    - Corrected the 2-hour discrepancy between the server (UTC) and local time (CEST)
                     - Fixed a math bug where the avg buy-in price for stocks was incorrect because it included old, sold shares
 
                     ### UI/UX Improvements 💄
