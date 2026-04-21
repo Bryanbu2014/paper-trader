@@ -34,7 +34,7 @@ jobs:
             
             console.log('Loading page...')
             await page.goto('https://paper-trading-pg.streamlit.app/');
-            await page.locator('text=\"Log In\"').waitFor();
+            await page.locator('text=\"Log In\"').waitFor({ timeout: 60000 });
             console.log('Page loaded!');
             
             console.log('Filling username and password...')
@@ -44,7 +44,7 @@ jobs:
             console.log('Clicking the login button...')
             await page.locator('button:has-text(\"Log In\")').first().click();
 
-            await page.locator('text=\"Logged in as: TESTER\"').waitFor()
+            await page.locator('text=\"Logged in as: TESTER\"').waitFor({ timeout: 60000 })
             console.log('Login successfully!')
 
             await browser.close();
