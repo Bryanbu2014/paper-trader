@@ -47,7 +47,7 @@ jobs:
             
             console.log('Filling username and password...');
             await appFrame.getByLabel(\"Username\").fill(process.env.USER);
-            await appFrame.getByLabel(\"Password\").fill(process.env.PASS);
+            await appFrame.getByLabel("Password", { exact: true }).fill(process.env.PASS);
             
             console.log('Clicking the login button...');
             await appFrame.locator('button:has-text(\"Log In\")').first().click();
