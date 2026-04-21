@@ -12,6 +12,8 @@ import database
 import journal
 import settings
 import terminal
+import settings
+import database
 
 st.set_page_config(page_title="Paper Trading Lab", layout="wide", page_icon="💸")
 
