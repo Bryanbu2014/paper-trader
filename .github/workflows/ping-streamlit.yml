@@ -2,7 +2,7 @@ name: Ping Streamlit
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/2 * * * *'
   workflow_dispatch: 
 
 jobs:
@@ -36,7 +36,7 @@ jobs:
             const page = await context.newPage();
             
             console.log('🤖 Loading page...');
-            await page.goto('https://paper-trading-pg.streamlit.app/');
+            await page.goto('https://paper-trading-lab.streamlit.app/');
             
             const appFrame = page.frameLocator('iframe[title=\"streamlitApp\"]');
             
