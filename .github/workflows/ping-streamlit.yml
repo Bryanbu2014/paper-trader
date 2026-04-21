@@ -47,7 +47,7 @@ jobs:
 
             console.log('--- WHAT THE ROBOT SEES RIGHT NOW ---');
             // This reads every single word on the screen and prints it!
-            const visibleText = await page.innerText('body');
+            const visibleText = await page.frameLocator('iframe[title=\"streamlitApp\"]').locator('body').innerText();
             console.log(visibleText);
             console.log('-------------------------------------');
             
