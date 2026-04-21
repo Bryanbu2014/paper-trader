@@ -1,7 +1,7 @@
-# 💸 Paper Trading Lab
+# 💸 Paper Trading Lab [![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://paper-trading-lab.streamlit.app/)
 
 ![GitHub Release](https://img.shields.io/github/v/release/Bryanbu2014/paper-trading-lab)
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://paper-trading-lab.streamlit.app/)
+![GitHub Release Date](https://img.shields.io/github/release-date/Bryanbu2014/paper-trading-lab)
 
 A fast, minimalist virtual stock trading terminal built with Python and Streamlit.
 
