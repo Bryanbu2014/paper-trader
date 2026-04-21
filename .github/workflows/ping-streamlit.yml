@@ -1,0 +1,61 @@
+name: Ping Streamlit
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch: 
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install chromium
+
+      - name: Visit and Login to Streamlit App
+        env:
+          USER: ${{ secrets.APP_USER_PING }}
+          PASS: ${{ secrets.APP_PASS_PING }}
+        run: |
+          node -e "
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch();
+            
+            const context = await browser.newContext({
+              userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            });
+            const page = await context.newPage();
+            
+            console.log('🤖 Loading page...');
+            await page.goto('https://paper-trading-lab.streamlit.app/');
+            
+            const appFrame = page.frameLocator('iframe[title=\"streamlitApp\"]');
+            
+            await appFrame.getByLabel(\"Username\").waitFor({ timeout: 60000 });
+            console.log('🤖 Page loaded!');
+            
+            console.log('🤖 Filling username and password...');
+            await appFrame.getByLabel(\"Username\").fill(process.env.USER);
+            await appFrame.getByLabel(\"Password\", { exact: true }).fill(process.env.PASS);
+            
+            console.log('🤖 Clicking the login button...');
+            await appFrame.locator('button:has-text(\"Log In\")').first().click();
+
+            await appFrame.locator('text=Log Out').waitFor({ timeout: 60000 });
+            
+            console.log('🤖 Login successfully!');
+
+
+            await browser.close();
+            console.log('🤖 All done, ping complete!');
+          })();
+          "
