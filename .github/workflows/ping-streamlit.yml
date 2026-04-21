@@ -34,7 +34,7 @@ jobs:
             
             console.log('Loading page...')
             await page.goto('https://paper-trading-pg.streamlit.app/');
-            await page.waitForTimeout(5000);
+            await page.waitForTimeout(120000);
 
             console.log('--- WHAT THE ROBOT SEES RIGHT NOW ---');
             // This reads every single word on the screen and prints it!
