@@ -1,0 +1,52 @@
+name: Ping Streamlit
+
+on:
+  schedule:
+    - cron: '0 */10 * * *'
+  workflow_dispatch: 
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm install playwright
+          npx playwright install chromium
+
+      - name: Visit and Login to Streamlit App
+        env:
+          USER: ${{ secrets.APP_USER_PING }}
+          PASS: ${{ secrets.APP_PASS_PING }}
+        run: |
+          node -e "
+          const { chromium } = require('playwright');
+          (async () => {
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            
+            console.log('Loading page...')
+            await page.goto('https://paper-trading-pg.streamlit.app/');
+            await page.locator('text="Log In"').waitFor();
+            console.log('Page loaded!');
+            
+            console.log('Filling username and password...')
+            await page.getByLabel("Username").fill(process.env.USER);
+            await page.getByLabel("Password").fill(process.env.PASS);
+            
+            console.log('Clicking the login button...')
+            await page.locator('button:has-text("Log In")').first().click();
+
+            await.page.locator('text="Logged in as: TESTER"').waitFor()
+            console.log('Login successfully!')
+
+            await browser.close();
+            console.log('All done, ping complete!');
+          })();
+          "
