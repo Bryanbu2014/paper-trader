@@ -1,5 +1,7 @@
 # 💸 Paper Trading Lab
 
+[Link to App](https://paper-trading-lab.streamlit.app/)
+
 A fast, minimalist virtual stock trading terminal built with Python and Streamlit.
 
 Paper Trading Lab allows multiple users to practice trading stocks in real-time using live market data, without risking real money. Every user gets a virtual $100,000 starting balance, and all trades, portfolios, and watchlists are safely saved to a cloud database.

@@ -1,13 +1,14 @@
-from datetime import datetime
+from datetime import datetime, timezone
+
 import pandas as pd
+import pytz
 import streamlit as st
 import yfinance as yf
 import database
 
+import database
 
-# ---------------------------------------------------------
-# FRAGMENT 1: THE WATCHLIST (NOW DUMB & FAST)
-# ---------------------------------------------------------
+
 @st.fragment
 def render_watchlist():
     with st.container(border=True):
@@ -16,7 +17,7 @@ def render_watchlist():
 
         if st.session_state.watchlist:
             for t in st.session_state.watchlist:
-                # Read instantly from the global whiteboard!
+
                 price = st.session_state.live_prices.get(t)
 
                 if price is not None:
@@ -54,7 +55,7 @@ def render_watchlist():
                     database.update_watchlist(
                         st.session_state.username, st.session_state.watchlist
                     )
-                    st.rerun()  # This forces app.py to reload and grab the new stock's price!
+                    st.rerun()
 
         if st.session_state.watchlist:
             rem_col1, rem_col2 = st.columns([2, 1], vertical_alignment="bottom")
@@ -103,9 +104,6 @@ def render_watchlist():
                     st.rerun()
 
 
-# ---------------------------------------------------------
-# FRAGMENT 2: THE TRADE PANEL (STAYS DYNAMIC)
-# ---------------------------------------------------------
 @st.fragment
 def render_trade_panel(portfolio):
     with st.container(border=True):
@@ -117,8 +115,6 @@ def render_trade_panel(portfolio):
         )
         current_price = 0
         if ticker:
-            # We keep this live fetcher because the user can type ANY random stock here
-            # that might not be on the global whiteboard yet!
             try:
                 stock = yf.Ticker(ticker)
                 price_data = stock.history(period="1d", interval="1m", prepost=True)
@@ -164,13 +160,19 @@ def render_trade_panel(portfolio):
 
             btn_buy, btn_sell = st.columns(2)
 
+            user_tz_name = st.context.timezone or "UTC"
+            user_tz = pytz.timezone(user_tz_name)
+            now_utc = datetime.now(timezone.utc)
+            local_now = now_utc.astimezone(user_tz)
+            timestamp_str = local_now.strftime("%Y-%m-%d %H:%M:%S")
+
             if btn_buy.button("🟢 BUY SHARES", use_container_width=True):
                 total_cost = total + fee
 
                 if st.session_state.balance >= total_cost:
                     st.session_state.balance -= total_cost
                     new_trade = {
-                        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Timestamp": timestamp_str,
                         "Ticker": ticker,
                         "Action": "BUY",
                         "Quantity": qty,
@@ -187,7 +189,9 @@ def render_trade_panel(portfolio):
                     )
                     database.add_trade(st.session_state.username, new_trade)
 
-                    st.success(f"Bought {qty} shares of {ticker}! (Fee: ${fee:,.2f})")
+                    st.session_state.trade_msg = (
+                        f"✅ Successfully bought {qty} shares of {ticker}!"
+                    )
                     st.rerun()
                 else:
                     st.error("Not enough cash!")
@@ -195,10 +199,9 @@ def render_trade_panel(portfolio):
             if btn_sell.button("🔴 SELL SHARES", use_container_width=True):
                 if shares_owned >= qty:
                     total_revenue = total - fee
-
                     st.session_state.balance += total_revenue
                     new_trade = {
-                        "Timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "Timestamp": timestamp_str,
                         "Ticker": ticker,
                         "Action": "SELL",
                         "Quantity": qty,
@@ -215,18 +218,23 @@ def render_trade_panel(portfolio):
                     )
                     database.add_trade(st.session_state.username, new_trade)
 
-                    st.success(f"Sold {qty} shares of {ticker}! (Fee: ${fee:,.2f})")
+                    st.session_state.trade_msg = (
+                        f"✅ Successfully sold {qty} shares of {ticker}!"
+                    )
                     st.rerun()
                 else:
                     st.error(f"You only own {shares_owned} shares.")
+
+            if "trade_msg" in st.session_state:
+                st.success(st.session_state.trade_msg)
+                del st.session_state.trade_msg
+
         else:
             st.info("Enter a valid target ticker above to enable trading.")
 
 
-# ---------------------------------------------------------
-# MAIN RENDER FUNCTION
-# ---------------------------------------------------------
 def render_terminal(portfolio):
+
     col_watch, col_trade = st.columns([1, 2], gap="large")
 
     with col_watch:

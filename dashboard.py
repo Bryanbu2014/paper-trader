@@ -1,7 +1,58 @@
 from datetime import datetime
+
 import pandas as pd
 import streamlit as st
+
 import database
+
+
+def calculate_realized_pnl(history_df):
+    """
+    Looks at the entire trade history to calculate locked-in cash profits.
+    Returns the total realized PnL AND a dictionary breaking it down by day.
+    """
+    total_realized_pnl = 0.0
+    daily_realized_pnl = {}
+    inventory = {}
+
+    if history_df is None or history_df.empty:
+        return 0.0, {}
+
+    sorted_history = history_df.sort_values(by="Timestamp")
+
+    for _, row in sorted_history.iterrows():
+        t = row["Ticker"]
+        action = row["Action"]
+        qty = row["Quantity"]
+        total = row["Total"]
+
+        date_str = str(row["Timestamp"])[:10]
+
+        if date_str not in daily_realized_pnl:
+            daily_realized_pnl[date_str] = 0.0
+
+        if t not in inventory:
+            inventory[t] = {"qty": 0, "total_cost": 0.0}
+
+        if action == "BUY":
+            inventory[t]["qty"] += qty
+            inventory[t]["total_cost"] += total
+
+        elif action == "SELL":
+            if inventory[t]["qty"] > 0:
+
+                avg_cost = inventory[t]["total_cost"] / inventory[t]["qty"]
+                cost_of_sold = avg_cost * qty
+
+                profit = total - cost_of_sold
+
+                total_realized_pnl += profit
+                daily_realized_pnl[date_str] += profit
+
+                inventory[t]["qty"] -= qty
+                inventory[t]["total_cost"] -= cost_of_sold
+
+    return total_realized_pnl, daily_realized_pnl
 
 
 def render_dashboard(portfolio):
@@ -9,8 +60,13 @@ def render_dashboard(portfolio):
     if "history_limit" not in st.session_state:
         st.session_state.history_limit = 10
 
+    history_df = st.session_state.history
+
+    total_realized_pnl, daily_realized_pnl = calculate_realized_pnl(history_df)
+
     holdings_data = []
     total_market_value = 0.0
+    total_unrealized_pnl = 0.0
 
     if not portfolio.empty:
         for index, row in portfolio.iterrows():
@@ -18,7 +74,6 @@ def render_dashboard(portfolio):
             qty = row["Quantity"]
             avg_price = row["Raw Price"]
 
-            # Read instantly from the global whiteboard! No Yahoo API call needed!
             live_price = st.session_state.live_prices.get(ticker)
 
             if live_price is not None:
@@ -26,30 +81,33 @@ def render_dashboard(portfolio):
                 total_market_value += total_value
 
                 total_cost = qty * avg_price
-                profit = total_value - total_cost
+                unrealized_profit = total_value - total_cost
+                total_unrealized_pnl += unrealized_profit
 
-                if profit >= 0:
-                    worth_str = f"${total_value:,.2f} (+${profit:,.2f})"
+                if unrealized_profit >= 0:
+                    unrealized_str = f"+${unrealized_profit:,.2f}"
                 else:
-                    worth_str = f"${total_value:,.2f} (-${abs(profit):,.2f})"
+                    unrealized_str = f"-${abs(unrealized_profit):,.2f}"
 
                 holdings_data.append(
                     {
                         "Ticker": ticker,
-                        "Stock Amount": qty,
-                        "Buy-in Price": row["Avg Price"],
+                        "Quantity": qty,
+                        "Avg Price": row["Avg Price"],
                         "Live Price": f"${live_price:,.2f}",
-                        "Total Worth": worth_str,
+                        "Total Value": f"${total_value:,.2f}",
+                        "Unrealized P/L": unrealized_str,
                     }
                 )
             else:
                 holdings_data.append(
                     {
                         "Ticker": ticker,
-                        "Stock Amount": qty,
-                        "Buy-in Price": row["Avg Price"],
+                        "Quantity": qty,
+                        "Avg Price": row["Avg Price"],
                         "Live Price": "Error",
-                        "Total Worth": "Error",
+                        "Total Value": "Error",
+                        "Unrealized P/L": "Error",
                     }
                 )
 
@@ -61,30 +119,24 @@ def render_dashboard(portfolio):
     with st.container(border=True):
         st.subheader("Performance Overview")
 
-        history_df = st.session_state.history
-        total_trades = len(history_df) if not history_df.empty else 0
-
-        if total_trades > 0:
-            unique_tickers = history_df["Ticker"].nunique()
-            total_buys = history_df[history_df["Action"] == "BUY"]["Total"].sum()
-            total_sells = history_df[history_df["Action"] == "SELL"]["Total"].sum()
-        else:
-            unique_tickers = 0
-            total_buys = 0.0
-            total_sells = 0.0
-
-        total_pnl = total_market_value - total_buys + total_sells
-
-        if total_pnl >= 0:
-            pnl_delta_str = f"${total_pnl:,.2f}"
-        else:
-            pnl_delta_str = f"-${abs(total_pnl):,.2f}"
-
         col1, col2, col3, col4 = st.columns(4)
-        col1.metric("Available Cash", f"${st.session_state.balance:,.2f}")
-        col2.metric("Net Worth", f"${current_total_value:,.2f}", delta=pnl_delta_str)
-        col3.metric("Total Trades", total_trades)
-        col4.metric("Assets Traded", unique_tickers)
+
+        col1.metric("Net Worth", f"${current_total_value:,.2f}")
+        col2.metric("Available Cash", f"${st.session_state.balance:,.2f}")
+
+        formatted_unrealized = (
+            f"${total_unrealized_pnl:,.2f}"
+            if total_unrealized_pnl >= 0
+            else f"-${abs(total_unrealized_pnl):,.2f}"
+        )
+        formatted_realized = (
+            f"${total_realized_pnl:,.2f}"
+            if total_realized_pnl >= 0
+            else f"-${abs(total_realized_pnl):,.2f}"
+        )
+
+        col3.metric("Total Unrealized P/L", formatted_unrealized)
+        col4.metric("Total Realized P/L", formatted_realized)
 
     with st.container(border=True):
         st.subheader("Current Holdings")
@@ -98,17 +150,19 @@ def render_dashboard(portfolio):
 
             def color_profit(val):
                 if isinstance(val, str):
-                    if "(+" in val:
+                    if val.startswith("+"):
                         return "color: #00FF00;"
-                    elif "(-" in val:
+                    elif val.startswith("-"):
                         return "color: #FF3D00;"
                 return ""
 
             try:
-                styled_df = holdings_df.style.map(color_profit, subset=["Total Worth"])
+                styled_df = holdings_df.style.map(
+                    color_profit, subset=["Unrealized P/L"]
+                )
             except AttributeError:
                 styled_df = holdings_df.style.applymap(
-                    color_profit, subset=["Total Worth"]
+                    color_profit, subset=["Unrealized P/L"]
                 )
 
             st.dataframe(styled_df, use_container_width=True, hide_index=True)
@@ -121,17 +175,34 @@ def render_dashboard(portfolio):
         if hist_df is not None and not hist_df.empty:
 
             hist_df = hist_df.sort_values("timestamp")
-            hist_df["Daily Gain/Loss"] = hist_df["net_worth"].diff()
+
+            hist_df["Daily P/L"] = hist_df["net_worth"].diff()
+
+            total_buys = (
+                history_df[history_df["Action"] == "BUY"]["Total"].sum()
+                if not history_df.empty
+                else 0.0
+            )
+            total_sells = (
+                history_df[history_df["Action"] == "SELL"]["Total"].sum()
+                if not history_df.empty
+                else 0.0
+            )
 
             dynamic_starting_capital = (
                 st.session_state.balance + total_buys - total_sells
             )
 
-            hist_df["Daily Gain/Loss"] = hist_df["Daily Gain/Loss"].fillna(
+            hist_df["Daily P/L"] = hist_df["Daily P/L"].fillna(
                 hist_df["net_worth"] - dynamic_starting_capital
             )
 
             hist_df["Net Worth"] = hist_df["net_worth"].apply(lambda x: f"${x:,.2f}")
+
+            def get_daily_realized(date_val):
+                return daily_realized_pnl.get(str(date_val), 0.0)
+
+            hist_df["Realized P/L"] = hist_df["timestamp"].apply(get_daily_realized)
 
             def format_pnl(val):
                 if val > 0:
@@ -140,29 +211,33 @@ def render_dashboard(portfolio):
                     return f"-${abs(val):,.2f}"
                 return "$0.00"
 
-            hist_df["Daily Gain/Loss"] = hist_df["Daily Gain/Loss"].apply(format_pnl)
+            hist_df["Daily P/L"] = hist_df["Daily P/L"].apply(format_pnl)
+            hist_df["Realized P/L"] = hist_df["Realized P/L"].apply(format_pnl)
+
             hist_df = hist_df.sort_values("timestamp", ascending=False)
             total_rows = len(hist_df)
 
-            display_df = hist_df[["timestamp", "Net Worth", "Daily Gain/Loss"]].rename(
-                columns={"timestamp": "Date"}
-            )
+            display_df = hist_df[
+                ["timestamp", "Net Worth", "Daily P/L", "Realized P/L"]
+            ].rename(columns={"timestamp": "Date"})
             display_df = display_df.head(st.session_state.history_limit)
 
             def color_daily_pnl(val):
-                if "+" in val:
-                    return "color: #00FF00;"
-                elif "-" in val:
-                    return "color: #FF3D00;"
+                if isinstance(val, str):
+                    if "+" in val:
+                        return "color: #00FF00;"
+                    elif "-" in val:
+                        return "color: #FF3D00;"
                 return ""
 
             try:
+
                 styled_history = display_df.style.map(
-                    color_daily_pnl, subset=["Daily Gain/Loss"]
+                    color_daily_pnl, subset=["Daily P/L", "Realized P/L"]
                 )
             except AttributeError:
                 styled_history = display_df.style.applymap(
-                    color_daily_pnl, subset=["Daily Gain/Loss"]
+                    color_daily_pnl, subset=["Daily P/L", "Realized P/L"]
                 )
 
             st.dataframe(styled_history, use_container_width=True, hide_index=True)
