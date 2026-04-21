@@ -41,7 +41,6 @@ jobs:
             
             const appFrame = page.frameLocator('iframe[title=\"streamlitApp\"]');
             
-            console.log('Loading page...');
             await appFrame.getByLabel(\"Username\").waitFor({ timeout: 60000 });
             console.log('Page loaded!');
             
@@ -57,7 +56,7 @@ jobs:
             await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
             console.log('Screenshot saved!');
 
-            await appFrame.locator('text=\"Logged in as: TESTER\"').waitFor({ timeout: 60000 });
+            await appFrame.locator('text=Log Out').waitFor({ timeout: 60000 });
             
             console.log('Login successfully!');
 
