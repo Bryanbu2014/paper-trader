@@ -21,37 +21,51 @@ jobs:
           npm install playwright
           npx playwright install chromium
 
-      - name: Visit and Screenshot Streamlit
+      - name: Visit and Login to Streamlit App
+        env:
+          USER: ${{ secrets.APP_USER_PING }}
+          PASS: ${{ secrets.APP_PASS_PING }}
         run: |
           node -e "
           const { chromium } = require('playwright');
           (async () => {
             const browser = await chromium.launch();
             
-            // Disguise the robot as a normal Windows/Chrome user
             const context = await browser.newContext({
               userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
             });
             const page = await context.newPage();
             
-            console.log('Loading page...');
-            await page.goto('https://paper-trading-pg.streamlit.app/'); // Put your URL here!
+            console.log('Loading page...')
+            await page.goto('https://paper-trading-pg.streamlit.app/');
             
-            console.log('Waiting 45 seconds for the app to wake up and render...');
-            await page.waitForTimeout(45000); 
+            // Wait up to 120s for the app to wake up and show the Log In text
+            await page.locator('text=\"Log In\"').waitFor({ timeout: 45000 });
+            console.log('Page loaded!');
+            
+            console.log('Filling username and password...')
+            // Fixed the quotes here with backslashes
+            await page.getByLabel(\"Username\").fill(process.env.USER);
+            await page.getByLabel(\"Password\").fill(process.env.PASS);
+            
+            console.log('Clicking the login button...')
+            await page.locator('button:has-text(\"Log In\")').first().click();
 
+            await page.waitForTimeout(45000)
             console.log('Taking a screenshot...');
-            // Take a picture and save it to the temporary computer
-            await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
-            
+            await page.screenshot({ path: 'login-screenshot.png', fullPage: true });
+
+            // Wait for the dashboard to confirm success
+            await page.locator('text=\"Logged in as: TESTER\"').waitFor({ timeout: 60000 });
+            console.log('Login successfully!');
+
             await browser.close();
-            console.log('Screenshot saved!');
+            console.log('All done, ping complete!');
           })();
           "
-
-      # This new step grabs the picture from the robot and gives it to you!
+    
       - name: Upload Screenshot to GitHub
         uses: actions/upload-artifact@v4
         with:
-          name: robot-eyes-screenshot
-          path: debug-screenshot.png
+          name: after-clicking-login
+          path: login-screenshot.png
