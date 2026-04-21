@@ -34,20 +34,11 @@ jobs:
             
             console.log('Loading page...')
             await page.goto('https://paper-trading-pg.streamlit.app/');
-            await page.locator('text=\"Log In\"').waitFor({ timeout: 60000 });
-            console.log('Page loaded!');
-            
-            console.log('Filling username and password...')
-            await page.getByLabel("Username").fill(process.env.USER);
-            await page.getByLabel("Password").fill(process.env.PASS);
-            
-            console.log('Clicking the login button...')
-            await page.locator('button:has-text(\"Log In\")').first().click();
+            await page.waitForTimeout(5000);
 
-            await page.locator('text=\"Logged in as: TESTER\"').waitFor({ timeout: 60000 })
-            console.log('Login successfully!')
-
-            await browser.close();
-            console.log('All done, ping complete!');
-          })();
+            console.log('--- WHAT THE ROBOT SEES RIGHT NOW ---');
+            // This reads every single word on the screen and prints it!
+            const visibleText = await page.innerText('body');
+            console.log(visibleText);
+            console.log('-------------------------------------');
           "
