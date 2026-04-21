@@ -44,7 +44,7 @@ jobs:
             console.log('Clicking the login button...')
             await page.locator('button:has-text(\"Log In\")').first().click();
 
-            await.page.locator('text=\"Logged in as: TESTER\"').waitFor()
+            await page.locator('text=\"Logged in as: TESTER\"').waitFor()
             console.log('Login successfully!')
 
             await browser.close();
