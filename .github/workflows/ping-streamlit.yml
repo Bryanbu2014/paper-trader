@@ -41,4 +41,8 @@ jobs:
             const visibleText = await page.innerText('body');
             console.log(visibleText);
             console.log('-------------------------------------');
+
+            await browser.close();
+            console.log('All done, ping complete!');
+          })();
           "
