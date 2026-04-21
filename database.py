@@ -77,7 +77,7 @@ def wipe_account_data(username, new_capital):
 
 
 def save_daily_net_worth(username, current_total_value):
-    user_tz_name = st.context.timezone or "UTC"
+    user_tz_name = st.context.timezone or "Europe/Berlin"
     user_tz = pytz.timezone(user_tz_name)
 
     now_utc = datetime.now(timezone.utc)
