@@ -43,8 +43,6 @@ jobs:
             console.log('Taking a screenshot...');
             // Take a picture and save it to the temporary computer
             await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
-            
-            await browser.close();
             console.log('Screenshot saved!');
 
             console.log('--- WHAT THE ROBOT SEES RIGHT NOW ---');
@@ -52,6 +50,9 @@ jobs:
             const visibleText = await page.innerText('body');
             console.log(visibleText);
             console.log('-------------------------------------');
+            
+            await browser.close();
+
           })();
           "
 
