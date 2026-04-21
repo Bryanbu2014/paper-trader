@@ -1,9 +1,8 @@
 name: Ping Streamlit
 
 on:
-  push:
   schedule:
-    - cron: '0 */10 * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch: 
 
 jobs:
@@ -36,38 +35,27 @@ jobs:
             });
             const page = await context.newPage();
             
-            console.log('Loading page...');
+            console.log('🤖 Loading page...');
             await page.goto('https://paper-trading-pg.streamlit.app/');
             
             const appFrame = page.frameLocator('iframe[title=\"streamlitApp\"]');
             
             await appFrame.getByLabel(\"Username\").waitFor({ timeout: 60000 });
-            console.log('Page loaded!');
+            console.log('🤖 Page loaded!');
             
-            console.log('Filling username and password...');
+            console.log('🤖 Filling username and password...');
             await appFrame.getByLabel(\"Username\").fill(process.env.USER);
             await appFrame.getByLabel(\"Password\", { exact: true }).fill(process.env.PASS);
             
-            console.log('Clicking the login button...');
+            console.log('🤖 Clicking the login button...');
             await appFrame.locator('button:has-text(\"Log In\")').first().click();
-
-            await page.waitForTimeout(30000);
-            console.log('Taking a screenshot...');
-            await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
-            console.log('Screenshot saved!');
 
             await appFrame.locator('text=Log Out').waitFor({ timeout: 60000 });
             
-            console.log('Login successfully!');
+            console.log('🤖 Login successfully!');
 
 
             await browser.close();
-            console.log('All done, ping complete!');
+            console.log('🤖 All done, ping complete!');
           })();
           "
-
-      - name: Upload Screenshot to GitHub
-        uses: actions/upload-artifact@v4
-        with:
-          name: robot-eyes-screenshot
-          path: debug-screenshot.png
