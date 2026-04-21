@@ -25,7 +25,7 @@ def check_password():
             """
             <div style='text-align: center; margin-bottom: 30px;'>
                 <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
-                    Paper Trading Lab</br><span class='version-badge'>TBD</span>
+                    Paper Trading Lab</br><span class='version-badge'>v1.2.0</span>
                 </h1>
             </div>
             """,
@@ -55,17 +55,18 @@ def check_password():
                         st.error("Incorrect username or password.")
 
         with st.expander("🚀 What's New?"):
-            with st.expander("vMajor.Minor.Patch"):
-                st.info("Released: TBD")
+            with st.expander("v1.2.0"):
+                st.info("Released: April 22, 2026")
                 st.markdown(
                     """
+                    ### CI Integration 🔥
+                    - Set up a CI task to ping the Streamlit app periodically to prevent shutdown
+
                     ### New Features ✨
                     - Integrated a real-time clock in the sidebar that automatically syncs with the user's current location
                     - The app now automatically detects the user's browser's timezone to ensure all data is relevant to the user
                     - Added Unrealized and Realized Profit/Loss (P/L) tracking to the Performance Overview panel
                     - Included a new daily breakdown of Realized Gain/Loss in the Daily Performance History panel
-
-                    ### Performance & Architecture 🚀
 
                     ### Bug Fixes 🛠️
                     - Fixed a bug where trade success messages ("Bought/Sold") disappeared instantly
