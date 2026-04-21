@@ -52,13 +52,15 @@ jobs:
             console.log('Clicking the login button...');
             await appFrame.locator('button:has-text(\"Log In\")').first().click();
 
+            await page.waitForTimeout(30000);
+            console.log('Taking a screenshot...');
+            await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
+            console.log('Screenshot saved!');
+
             await appFrame.locator('text=\"Logged in as: TESTER\"').waitFor({ timeout: 60000 });
             
             console.log('Login successfully!');
 
-            console.log('Taking a screenshot...');
-            await page.screenshot({ path: 'debug-screenshot.png', fullPage: true });
-            console.log('Screenshot saved!');
 
             await browser.close();
             console.log('All done, ping complete!');
