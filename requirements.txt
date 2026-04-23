@@ -4,3 +4,4 @@ pandas
 streamlit-autorefresh
 pytz
 supabase
+streamlit-local-storage
