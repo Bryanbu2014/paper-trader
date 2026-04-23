@@ -89,7 +89,7 @@ def check_password():
                     ### Security & Authentication 🛡️
                     - Implemented single-device session to enhance account security
                     - Added automatic logout when an account is accessed from another device
-                    - Ensured all authentication remalocalS = LocalStorage()in session-based and expire upon browser closure
+                    - Ensured all authentication remain in session-based and expire upon browser closure
                     
                     ### UI/UX Improvements 💄
                     - Added a 'Remember me' feature to auto-fill username for quicker logins
