@@ -82,6 +82,14 @@ def check_password():
                         st.error("Incorrect username or password.")
 
         with st.expander("🚀 What's New?"):
+            with st.expander("v1.4.0"):
+                st.info("Released: April 24, 2026")
+                st.markdown(
+                    """
+                    ### New Features ✨
+                    - Integrated a tabbed layout in the Market Terminal for market research and analytics
+                    """
+                )
             with st.expander("v1.3.0"):
                 st.info("Released: April 23, 2026")
                 st.markdown(
