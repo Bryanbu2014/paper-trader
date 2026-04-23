@@ -1,5 +1,9 @@
-import streamlit as st
+import uuid
 
+import streamlit as st
+from streamlit_local_storage import LocalStorage
+
+import database
 
 def check_password():
     """Returns True if the user is logged in, False otherwise."""
@@ -15,7 +19,15 @@ def check_password():
         st.session_state.username = ""
 
     if st.session_state.logged_in:
-        return True
+        db_session_id = database.get_session_id(st.session_state.username)
+        if st.session_state.get("session_id") == db_session_id:
+            return True
+        else:
+            st.session_state.logged_in = False
+            st.session_state.username = ""
+            if "session_id" in st.session_state:
+                del st.session_state.session_id
+            st.warning("You have been logged out because your account was accessed from another device.")
 
     login_screen = st.empty()
 
@@ -25,7 +37,7 @@ def check_password():
             """
             <div style='text-align: center; margin-bottom: 30px;'>
                 <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
-                    Paper Trading Lab</br><span class='version-badge'>v1.2.0</span>
+                    Paper Trading Lab</br><span class='version-badge'>v1.3.0</span>
                 </h1>
             </div>
             """,
@@ -36,9 +48,14 @@ def check_password():
             st.title("⛔ Restricted Access")
             st.write("Please log in to your personal trading account.")
 
+            local_storage = LocalStorage()
+            saved_user = local_storage.getItem("remembered_username")
+            default_user = saved_user if saved_user else ""
+
             with st.form("login_form", border=False):
-                input_user = st.text_input("Username").lower()
+                input_user = st.text_input("Username", value=default_user).lower()
                 input_pass = st.text_input("Password", type="password")
+                remember_me = st.checkbox("Remember me", value=bool(default_user))
                 submit_button = st.form_submit_button(
                     "Log In", type="primary", use_container_width=True
                 )
@@ -48,13 +65,36 @@ def check_password():
                         input_user in USER_ACCOUNTS
                         and USER_ACCOUNTS[input_user] == input_pass
                     ):
+                        if remember_me:
+                            local_storage.setItem("remembered_username", input_user)
+                        else:
+                            local_storage.setItem("remembered_username", "")
+
                         st.session_state.logged_in = True
                         st.session_state.username = input_user
+                        
+                        new_session_id = str(uuid.uuid4())
+                        st.session_state.session_id = new_session_id
+                        database.update_session_id(input_user, new_session_id)
+                        
                         st.rerun()
                     else:
                         st.error("Incorrect username or password.")
 
         with st.expander("🚀 What's New?"):
+            with st.expander("v1.3.0"):
+                st.info("Released: April 23, 2026")
+                st.markdown(
+                    """
+                    ### Security & Authentication 🛡️
+                    - Implemented single-device session to enhance account security
+                    - Added automatic logout when an account is accessed from another device
+                    - Ensured all authentication remain in session-based and expire upon browser closure
+                    
+                    ### UI/UX Improvements 💄
+                    - Added a 'Remember me' feature to auto-fill username for quicker logins
+                    """
+                )
             with st.expander("v1.2.0"):
                 st.info("Released: April 22, 2026")
                 st.markdown(
