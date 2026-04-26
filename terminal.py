@@ -4,7 +4,6 @@ import pandas as pd
 import pytz
 import streamlit as st
 import yfinance as yf
-import database
 
 import database
 
@@ -131,105 +130,183 @@ def render_trade_panel(portfolio):
             except Exception as e:
                 st.error("Could not fetch data. Check the ticker symbol.")
 
-    with st.container(border=True):
-        st.subheader("Execute Trade")
-        if current_price > 0:
-            c1, c2 = st.columns([1, 1], vertical_alignment="center")
-            with c1:
-                qty = st.number_input("Quantity to Trade", min_value=1, step=1)
-                fee = st.session_state.transaction_fee
-                st.write(f"**Transaction Fee:** ${fee:,.2f}")
-            with c1:
-                total = qty * current_price
-                st.metric(label="Total Before Transaction Fee", value=f"${total:,.2f}")
+    if current_price > 0:
+        with st.container(border=True):
+            tab_trade, tab_fundamentals, tab_news = st.tabs(
+                ["⚡ Execute Trade", "📊 Fundamentals", "📰 Recent News"]
+            )
 
-            shares_owned = 0
-            buy_in_price = "$0.00"
-
-            if not portfolio.empty and ticker in portfolio["Ticker"].values:
-                stock_row = portfolio.loc[portfolio["Ticker"] == ticker]
-                shares_owned = stock_row["Quantity"].iloc[0]
-                buy_in_price = stock_row["Avg Price"].iloc[0]
-
-            if shares_owned > 0:
-                st.info(
-                    f"💼 You own **{shares_owned} shares** at a buy-in price of **{buy_in_price}**"
-                )
-            else:
-                st.write(f"You currently own: **0 shares**")
-
-            btn_buy, btn_sell = st.columns(2)
-
-            user_tz_name = st.context.timezone or "UTC"
-            user_tz = pytz.timezone(user_tz_name)
-            now_utc = datetime.now(timezone.utc)
-            local_now = now_utc.astimezone(user_tz)
-            timestamp_str = local_now.strftime("%Y-%m-%d %H:%M:%S")
-
-            if btn_buy.button("🟢 BUY SHARES", use_container_width=True):
-                total_cost = total + fee
-
-                if st.session_state.balance >= total_cost:
-                    st.session_state.balance -= total_cost
-                    new_trade = {
-                        "Timestamp": timestamp_str,
-                        "Ticker": ticker,
-                        "Action": "BUY",
-                        "Quantity": qty,
-                        "Price": current_price,
-                        "Total": round(total_cost, 2),
-                    }
-                    st.session_state.history = pd.concat(
-                        [st.session_state.history, pd.DataFrame([new_trade])],
-                        ignore_index=True,
+            with tab_trade:
+                st.subheader("Execute Trade")
+                c1, c2 = st.columns([1, 1], vertical_alignment="center")
+                with c1:
+                    qty = st.number_input("Quantity to Trade", min_value=1, step=1)
+                    fee = st.session_state.transaction_fee
+                    st.write(f"**Transaction Fee:** ${fee:,.2f}")
+                with c1:
+                    total = qty * current_price
+                    st.metric(
+                        label="Total Before Transaction Fee", value=f"${total:,.2f}"
                     )
 
-                    database.update_balance(
-                        st.session_state.username, st.session_state.balance
-                    )
-                    database.add_trade(st.session_state.username, new_trade)
+                shares_owned = 0
+                buy_in_price = "$0.00"
 
-                    st.session_state.trade_msg = (
-                        f"✅ Successfully bought {qty} shares of {ticker}!"
+                if not portfolio.empty and ticker in portfolio["Ticker"].values:
+                    stock_row = portfolio.loc[portfolio["Ticker"] == ticker]
+                    shares_owned = stock_row["Quantity"].iloc[0]
+                    buy_in_price = stock_row["Avg Price"].iloc[0]
+
+                if shares_owned > 0:
+                    st.info(
+                        f"💼 You own **{shares_owned} shares** at a buy-in price of **{buy_in_price}**"
                     )
-                    st.rerun()
                 else:
-                    st.error("Not enough cash!")
+                    st.write(f"You currently own: **0 shares**")
 
-            if btn_sell.button("🔴 SELL SHARES", use_container_width=True):
-                if shares_owned >= qty:
-                    total_revenue = total - fee
-                    st.session_state.balance += total_revenue
-                    new_trade = {
-                        "Timestamp": timestamp_str,
-                        "Ticker": ticker,
-                        "Action": "SELL",
-                        "Quantity": qty,
-                        "Price": current_price,
-                        "Total": round(total_revenue, 2),
-                    }
-                    st.session_state.history = pd.concat(
-                        [st.session_state.history, pd.DataFrame([new_trade])],
-                        ignore_index=True,
-                    )
+                btn_buy, btn_sell = st.columns(2)
 
-                    database.update_balance(
-                        st.session_state.username, st.session_state.balance
-                    )
-                    database.add_trade(st.session_state.username, new_trade)
+                user_tz_name = st.context.timezone or "UTC"
+                user_tz = pytz.timezone(user_tz_name)
+                now_utc = datetime.now(timezone.utc)
+                local_now = now_utc.astimezone(user_tz)
+                timestamp_str = local_now.strftime("%Y-%m-%d %H:%M:%S")
 
-                    st.session_state.trade_msg = (
-                        f"✅ Successfully sold {qty} shares of {ticker}!"
-                    )
-                    st.rerun()
-                else:
-                    st.error(f"You only own {shares_owned} shares.")
+                if btn_buy.button("🟢 BUY SHARES", use_container_width=True):
+                    total_cost = total + fee
 
-            if "trade_msg" in st.session_state:
-                st.success(st.session_state.trade_msg)
-                del st.session_state.trade_msg
+                    if st.session_state.balance >= total_cost:
+                        st.session_state.balance -= total_cost
+                        new_trade = {
+                            "Timestamp": timestamp_str,
+                            "Ticker": ticker,
+                            "Action": "BUY",
+                            "Quantity": qty,
+                            "Price": current_price,
+                            "Total": round(total_cost, 2),
+                        }
+                        st.session_state.history = pd.concat(
+                            [st.session_state.history, pd.DataFrame([new_trade])],
+                            ignore_index=True,
+                        )
 
-        else:
+                        database.update_balance(
+                            st.session_state.username, st.session_state.balance
+                        )
+                        database.add_trade(st.session_state.username, new_trade)
+
+                        st.session_state.trade_msg = (
+                            f"✅ Successfully bought {qty} shares of {ticker}!"
+                        )
+                        st.rerun()
+                    else:
+                        st.error("Not enough cash!")
+
+                if btn_sell.button("🔴 SELL SHARES", use_container_width=True):
+                    if shares_owned >= qty:
+                        total_revenue = total - fee
+                        st.session_state.balance += total_revenue
+                        new_trade = {
+                            "Timestamp": timestamp_str,
+                            "Ticker": ticker,
+                            "Action": "SELL",
+                            "Quantity": qty,
+                            "Price": current_price,
+                            "Total": round(total_revenue, 2),
+                        }
+                        st.session_state.history = pd.concat(
+                            [st.session_state.history, pd.DataFrame([new_trade])],
+                            ignore_index=True,
+                        )
+
+                        database.update_balance(
+                            st.session_state.username, st.session_state.balance
+                        )
+                        database.add_trade(st.session_state.username, new_trade)
+
+                        st.session_state.trade_msg = (
+                            f"✅ Successfully sold {qty} shares of {ticker}!"
+                        )
+                        st.rerun()
+                    else:
+                        st.error(f"You only own {shares_owned} shares.")
+
+                if "trade_msg" in st.session_state:
+                    st.success(st.session_state.trade_msg)
+                    del st.session_state.trade_msg
+
+            with tab_fundamentals:
+                st.subheader("Company Fundamentals")
+                try:
+                    info = stock.info
+                    if info:
+
+                        def format_market_cap(val):
+                            if not val:
+                                return "N/A"
+                            if val >= 1e12:
+                                return f"${val/1e12:.2f}T"
+                            if val >= 1e9:
+                                return f"${val/1e9:.2f}B"
+                            if val >= 1e6:
+                                return f"${val/1e6:.2f}M"
+                            return f"${val:,.0f}"
+
+                        col_f1, col_f2, col_f3 = st.columns(3)
+                        col_f1.metric(
+                            "Market Cap", format_market_cap(info.get("marketCap"))
+                        )
+
+                        pe = info.get("trailingPE")
+                        col_f1.metric(
+                            "P/E Ratio",
+                            f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
+                        )
+
+                        high52 = info.get("fiftyTwoWeekHigh")
+                        col_f2.metric(
+                            "52 Week High", f"${high52:,.2f}" if high52 else "N/A"
+                        )
+
+                        low52 = info.get("fiftyTwoWeekLow")
+                        col_f2.metric(
+                            "52 Week Low", f"${low52:,.2f}" if low52 else "N/A"
+                        )
+
+                        try:
+                            hist_7d = stock.history(period="7d")
+                            if not hist_7d.empty:
+                                high7 = hist_7d["High"].max()
+                                low7 = hist_7d["Low"].min()
+                                col_f3.metric("7 Day High", f"${high7:,.2f}")
+                                col_f3.metric("7 Day Low", f"${low7:,.2f}")
+                            else:
+                                col_f3.metric("7 Day High", "N/A")
+                                col_f3.metric("7 Day Low", "N/A")
+                        except:
+                            col_f3.metric("7 Day High", "N/A")
+                            col_f3.metric("7 Day Low", "N/A")
+
+                        st.write(
+                            f"**Sector:** {info.get('sector', 'N/A')} | **Industry:** {info.get('industry', 'N/A')}"
+                        )
+                        with st.expander("Company Description"):
+                            st.write(
+                                info.get(
+                                    "longBusinessSummary", "No description available."
+                                )
+                            )
+                    else:
+                        st.info("Fundamentals not available for this ticker.")
+                except Exception as e:
+                    st.error("Could not fetch fundamentals.")
+
+            with tab_news:
+                st.subheader("Recent News")
+                st.info("📰 This feature is currently undergoing maintenance. Check back soon!")
+
+    else:
+        with st.container(border=True):
             st.info("Enter a valid target ticker above to enable trading.")
 
 

@@ -5,6 +5,7 @@ from streamlit_local_storage import LocalStorage
 
 import database
 
+
 def check_password():
     """Returns True if the user is logged in, False otherwise."""
 
@@ -27,7 +28,9 @@ def check_password():
             st.session_state.username = ""
             if "session_id" in st.session_state:
                 del st.session_state.session_id
-            st.warning("You have been logged out because your account was accessed from another device.")
+            st.warning(
+                "You have been logged out because your account was accessed from another device."
+            )
 
     login_screen = st.empty()
 
@@ -72,20 +75,25 @@ def check_password():
 
                         st.session_state.logged_in = True
                         st.session_state.username = input_user
-                        
+
                         new_session_id = str(uuid.uuid4())
                         st.session_state.session_id = new_session_id
                         database.update_session_id(input_user, new_session_id)
-                        
+
                         st.rerun()
                     else:
                         st.error("Incorrect username or password.")
 
         with st.expander("🚀 What's New?"):
+            with st.expander("v1.4.0"):
+                st.info("Released: April 24, 2026")
+                st.markdown("""
+                    ### New Features ✨
+                    - Integrated a tabbed layout in the Market Terminal for market research and analytics
+                    """)
             with st.expander("v1.3.0"):
                 st.info("Released: April 23, 2026")
-                st.markdown(
-                    """
+                st.markdown("""
                     ### Security & Authentication 🛡️
                     - Implemented single-device session to enhance account security
                     - Added automatic logout when an account is accessed from another device
@@ -93,12 +101,10 @@ def check_password():
                     
                     ### UI/UX Improvements 💄
                     - Added a 'Remember me' feature to auto-fill username for quicker logins
-                    """
-                )
+                    """)
             with st.expander("v1.2.0"):
                 st.info("Released: April 22, 2026")
-                st.markdown(
-                    """
+                st.markdown("""
                     ### CI Integration 🔥
                     - Set up a CI task to ping the Streamlit app periodically to prevent shutdown
 
@@ -116,12 +122,10 @@ def check_password():
                     ### UI/UX Improvements 💄
                     - Removed distracting anchor links from headers
                     - Upgraded the version badge with a smooth animated background
-                    """
-                )
+                    """)
             with st.expander("v1.1.0"):
                 st.info("Released: April 16, 2026")
-                st.markdown(
-                    """
+                st.markdown("""
                     ### New Features ✨
                     - Introduced a dedicated Settings menu with a full account reset functionality
                     - Implemented daily performance history to track daily gain/loss
@@ -143,20 +147,17 @@ def check_password():
                     - Moved version badge one line below the title
                     - Included light mode
                     - Swapped __What's New?__ view with __Request Access__ view on login page
-                    """
-                )
+                    """)
             with st.expander("v1.0.0"):
                 st.info("Released: April 14, 2026")
-                st.markdown(
-                    """
+                st.markdown("""
                     - Deployed the app to the internet
                     - Connected the app to a database
                     - Added a login screen for only authorized users
                     - Built the screen for buying and selling stocks
                     - Created dashboard
                     - Added a simple history list
-                    """
-                )
+                    """)
 
         with st.expander("🔑 Request Access"):
             st.write(
@@ -177,8 +178,7 @@ def check_password():
                     use_container_width=True,
                 )
 
-            st.markdown(
-                """
+            st.markdown("""
                 **How to get an account:**
                 1. Send me a message with your preferred **Username**.
                 2. I will set up your credentials and provide you with a password.
@@ -186,7 +186,6 @@ def check_password():
                 ---
                 * **Note:** Once you have access, your portfolio and trade history will be saved exclusively to your account name.
                 * **Note:** You are not allowed to change your password.
-                """
-            )
+                """)
 
     return False
