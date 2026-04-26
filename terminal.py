@@ -4,7 +4,6 @@ import pandas as pd
 import pytz
 import streamlit as st
 import yfinance as yf
-import database
 
 import database
 
@@ -133,8 +132,10 @@ def render_trade_panel(portfolio):
 
     if current_price > 0:
         with st.container(border=True):
-            tab_trade, tab_fundamentals, tab_news = st.tabs(["⚡ Execute Trade", "📊 Fundamentals", "📰 Recent News"])
-            
+            tab_trade, tab_fundamentals, tab_news = st.tabs(
+                ["⚡ Execute Trade", "📊 Fundamentals", "📰 Recent News"]
+            )
+
             with tab_trade:
                 st.subheader("Execute Trade")
                 c1, c2 = st.columns([1, 1], vertical_alignment="center")
@@ -144,7 +145,9 @@ def render_trade_panel(portfolio):
                     st.write(f"**Transaction Fee:** ${fee:,.2f}")
                 with c1:
                     total = qty * current_price
-                    st.metric(label="Total Before Transaction Fee", value=f"${total:,.2f}")
+                    st.metric(
+                        label="Total Before Transaction Fee", value=f"${total:,.2f}"
+                    )
 
                 shares_owned = 0
                 buy_in_price = "$0.00"
@@ -237,30 +240,44 @@ def render_trade_panel(portfolio):
                 try:
                     info = stock.info
                     if info:
+
                         def format_market_cap(val):
-                            if not val: return "N/A"
-                            if val >= 1e12: return f"${val/1e12:.2f}T"
-                            if val >= 1e9: return f"${val/1e9:.2f}B"
-                            if val >= 1e6: return f"${val/1e6:.2f}M"
+                            if not val:
+                                return "N/A"
+                            if val >= 1e12:
+                                return f"${val/1e12:.2f}T"
+                            if val >= 1e9:
+                                return f"${val/1e9:.2f}B"
+                            if val >= 1e6:
+                                return f"${val/1e6:.2f}M"
                             return f"${val:,.0f}"
 
                         col_f1, col_f2, col_f3 = st.columns(3)
-                        col_f1.metric("Market Cap", format_market_cap(info.get('marketCap')))
-                        
-                        pe = info.get('trailingPE')
-                        col_f1.metric("P/E Ratio", f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A")
-                        
-                        high52 = info.get('fiftyTwoWeekHigh')
-                        col_f2.metric("52 Week High", f"${high52:,.2f}" if high52 else "N/A")
-                        
-                        low52 = info.get('fiftyTwoWeekLow')
-                        col_f2.metric("52 Week Low", f"${low52:,.2f}" if low52 else "N/A")
+                        col_f1.metric(
+                            "Market Cap", format_market_cap(info.get("marketCap"))
+                        )
+
+                        pe = info.get("trailingPE")
+                        col_f1.metric(
+                            "P/E Ratio",
+                            f"{pe:.2f}" if isinstance(pe, (int, float)) else "N/A",
+                        )
+
+                        high52 = info.get("fiftyTwoWeekHigh")
+                        col_f2.metric(
+                            "52 Week High", f"${high52:,.2f}" if high52 else "N/A"
+                        )
+
+                        low52 = info.get("fiftyTwoWeekLow")
+                        col_f2.metric(
+                            "52 Week Low", f"${low52:,.2f}" if low52 else "N/A"
+                        )
 
                         try:
                             hist_7d = stock.history(period="7d")
                             if not hist_7d.empty:
-                                high7 = hist_7d['High'].max()
-                                low7 = hist_7d['Low'].min()
+                                high7 = hist_7d["High"].max()
+                                low7 = hist_7d["Low"].min()
                                 col_f3.metric("7 Day High", f"${high7:,.2f}")
                                 col_f3.metric("7 Day Low", f"${low7:,.2f}")
                             else:
@@ -269,10 +286,16 @@ def render_trade_panel(portfolio):
                         except:
                             col_f3.metric("7 Day High", "N/A")
                             col_f3.metric("7 Day Low", "N/A")
-                        
-                        st.write(f"**Sector:** {info.get('sector', 'N/A')} | **Industry:** {info.get('industry', 'N/A')}")
+
+                        st.write(
+                            f"**Sector:** {info.get('sector', 'N/A')} | **Industry:** {info.get('industry', 'N/A')}"
+                        )
                         with st.expander("Company Description"):
-                            st.write(info.get('longBusinessSummary', 'No description available.'))
+                            st.write(
+                                info.get(
+                                    "longBusinessSummary", "No description available."
+                                )
+                            )
                     else:
                         st.info("Fundamentals not available for this ticker.")
                 except Exception as e:
@@ -280,86 +303,7 @@ def render_trade_panel(portfolio):
 
             with tab_news:
                 st.subheader("Recent News")
-                try:
-                    news = stock.news
-                    if news:
-                        filtered_news = []
-                        short_name = ""
-                        try:
-                            short_name = stock.info.get('shortName') or ''
-                            short_name = short_name.split()[0].lower()
-                            short_name = "".join(c for c in short_name if c.isalnum())
-                        except:
-                            pass
-
-                        for article in news:
-                            content = article.get('content') or {}
-                            title = content.get('title') or ''
-                            summary = content.get('summary') or ''
-                            title = title.lower()
-                            summary = summary.lower()
-                            
-                            text_to_search = title + " " + summary
-                            
-                            if ticker.lower() in text_to_search or (short_name and short_name in text_to_search):
-                                filtered_news.append(article)
-                        
-                        if not filtered_news:
-                            filtered_news = news
-                            
-                        def get_pub_time(article):
-                            content = article.get('content') or {}
-                            pub_date = content.get('pubDate')
-                            if not pub_date:
-                                return datetime.min.replace(tzinfo=timezone.utc)
-                            try:
-                                return datetime.strptime(pub_date, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
-                            except:
-                                return datetime.min.replace(tzinfo=timezone.utc)
-                                
-                        if "news_limit_ticker" not in st.session_state or st.session_state.news_limit_ticker != ticker:
-                            st.session_state.news_limit = 5
-                            st.session_state.news_limit_ticker = ticker
-
-                        filtered_news.sort(key=get_pub_time, reverse=True)
-                            
-                        for article in filtered_news[:st.session_state.news_limit]:
-                            content = article.get('content') or {}
-                            title = content.get('title') or 'No Title'
-                            
-                            click_url = content.get('clickThroughUrl') or content.get('canonicalUrl') or {}
-                            link = click_url.get('url') or '#'
-                            
-                            provider = content.get('provider') or {}
-                            publisher = provider.get('displayName') or 'Unknown'
-                            
-                            publish_time = content.get('pubDate')
-                            
-                            if link != '#':
-                                st.markdown(f"**[{title}]({link})**")
-                            else:
-                                st.markdown(f"**{title}**")
-                            
-                            if publish_time:
-                                try:
-                                    dt = datetime.strptime(publish_time, "%Y-%m-%dT%H:%M:%SZ")
-                                    time_str = dt.strftime('%Y-%m-%d %H:%M:%S UTC')
-                                    st.caption(f"Published by {publisher} - {time_str}")
-                                except:
-                                    st.caption(f"Published by {publisher} - {publish_time}")
-                            else:
-                                st.caption(f"Published by {publisher}")
-                            
-                            st.divider()
-
-                        if len(filtered_news) > st.session_state.news_limit:
-                            if st.button("Load More News", use_container_width=True):
-                                st.session_state.news_limit += 5
-                                st.rerun()
-                    else:
-                        st.info("No recent news available.")
-                except Exception as e:
-                    st.error(f"Could not fetch news. Error: {str(e)}")
+                st.info("📰 This feature is currently undergoing maintenance. Check back soon!")
 
     else:
         with st.container(border=True):

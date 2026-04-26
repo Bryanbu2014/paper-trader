@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 import pandas as pd
 import pytz
 import streamlit as st
@@ -52,15 +53,29 @@ def update_settings(username, fee):
 
 
 def update_session_id(username, session_id):
-    res = supabase.table("user_settings").select("username").eq("username", username).execute()
+    res = (
+        supabase.table("user_settings")
+        .select("username")
+        .eq("username", username)
+        .execute()
+    )
     if res.data:
-        supabase.table("user_settings").update({"session_id": session_id}).eq("username", username).execute()
+        supabase.table("user_settings").update({"session_id": session_id}).eq(
+            "username", username
+        ).execute()
     else:
-        supabase.table("user_settings").insert({"username": username, "session_id": session_id, "transaction_fee": 1.0}).execute()
+        supabase.table("user_settings").insert(
+            {"username": username, "session_id": session_id, "transaction_fee": 1.0}
+        ).execute()
 
 
 def get_session_id(username):
-    res = supabase.table("user_settings").select("session_id").eq("username", username).execute()
+    res = (
+        supabase.table("user_settings")
+        .select("session_id")
+        .eq("username", username)
+        .execute()
+    )
     if res.data:
         return res.data[0].get("session_id")
     return None
