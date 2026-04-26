@@ -35,21 +35,39 @@ def load_data(username):
     watchlist = [row["ticker"] for row in wl_res.data] if wl_res.data else []
     watchlist.sort()
 
-    fee_res = (
-        supabase.table("user_settings")
-        .select("transaction_fee")
-        .eq("username", username)
-        .execute()
-    )
-    fee = fee_res.data[0]["transaction_fee"] if fee_res.data else 1.0
+    try:
+        fee_res = (
+            supabase.table("user_settings")
+            .select("transaction_fee, market_hours_only")
+            .eq("username", username)
+            .execute()
+        )
+        fee = fee_res.data[0]["transaction_fee"] if fee_res.data else 1.0
+        mho = fee_res.data[0].get("market_hours_only", False) if fee_res.data else False
+    except Exception:
+        # Fallback if market_hours_only column is missing
+        fee_res = (
+            supabase.table("user_settings")
+            .select("transaction_fee")
+            .eq("username", username)
+            .execute()
+        )
+        fee = fee_res.data[0]["transaction_fee"] if fee_res.data else 1.0
+        mho = False
 
-    return balance, history, watchlist, fee
+    return balance, history, watchlist, fee, mho
 
 
-def update_settings(username, fee):
-    supabase.table("user_settings").upsert(
-        {"username": username, "transaction_fee": fee}
-    ).execute()
+def update_settings(username, fee, mho):
+    try:
+        supabase.table("user_settings").upsert(
+            {"username": username, "transaction_fee": fee, "market_hours_only": mho}
+        ).execute()
+    except Exception:
+        # Fallback to only updating the fee if column is missing
+        supabase.table("user_settings").upsert(
+            {"username": username, "transaction_fee": fee}
+        ).execute()
 
 
 def update_session_id(username, session_id):
@@ -64,9 +82,20 @@ def update_session_id(username, session_id):
             "username", username
         ).execute()
     else:
-        supabase.table("user_settings").insert(
-            {"username": username, "session_id": session_id, "transaction_fee": 1.0}
-        ).execute()
+        try:
+            supabase.table("user_settings").insert(
+                {
+                    "username": username,
+                    "session_id": session_id,
+                    "transaction_fee": 1.0,
+                    "market_hours_only": False,
+                }
+            ).execute()
+        except Exception:
+            # Fallback if column missing
+            supabase.table("user_settings").insert(
+                {"username": username, "session_id": session_id, "transaction_fee": 1.0}
+            ).execute()
 
 
 def get_session_id(username):

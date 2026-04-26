@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timezone, time
 
 import pandas as pd
 import pytz
@@ -138,15 +138,65 @@ def render_trade_panel(portfolio):
 
             with tab_trade:
                 st.subheader("Execute Trade")
+
+                market_open = True
+                if st.session_state.get("market_hours_only", False):
+                    et_tz = pytz.timezone("US/Eastern")
+                    now_et = datetime.now(et_tz)
+
+                    is_weekday = now_et.weekday() < 5
+                    market_start = time(4, 0)
+                    market_end = time(20, 0)
+                    current_time = now_et.time()
+
+                    market_open = is_weekday and (
+                        market_start <= current_time <= market_end
+                    )
+
+                    if not market_open:
+                        st.error("🔒 **Trading is currently locked.**")
+
+                        # Convert ET market hours to User Local Time for display
+                        user_tz_name = st.context.timezone or "UTC"
+                        user_tz = pytz.timezone(user_tz_name)
+
+                        today = now_et.date()
+                        start_dt = et_tz.localize(datetime.combine(today, market_start))
+                        end_dt = et_tz.localize(datetime.combine(today, market_end))
+
+                        local_start = start_dt.astimezone(user_tz).strftime("%I:%M %p")
+                        local_end = end_dt.astimezone(user_tz).strftime("%I:%M %p")
+
+                        st.info(
+                            f"Extended US market hours (Pre-market + Regular + After-hours) are **4:00 AM – 8:00 PM ET**. In your local time (**{user_tz_name}**), this is **{local_start} – {local_end}**, Monday through Friday."
+                        )
+
                 c1, c2 = st.columns([1, 1], vertical_alignment="center")
                 with c1:
-                    qty = st.number_input("Quantity to Trade", min_value=1, step=1)
+                    qty = st.number_input(
+                        "Quantity to Trade",
+                        min_value=1,
+                        step=1,
+                        disabled=not market_open,
+                    )
                     fee = st.session_state.transaction_fee
                     st.write(f"**Transaction Fee:** ${fee:,.2f}")
-                with c1:
-                    total = qty * current_price
-                    st.metric(
-                        label="Total Before Transaction Fee", value=f"${total:,.2f}"
+                with c2:
+                    buy_exec_price = current_price + (fee / qty)
+                    sell_exec_price = max(0.0, current_price - (fee / qty))
+
+                    m1, m2 = st.columns(2)
+                    m1.metric(
+                        label="Buy Price",
+                        value=f"${buy_exec_price:,.2f}",
+                        delta=f"${fee/qty:,.2f} fee per share",
+                        delta_color="off",
+                    )
+                    m2.metric(
+                        label="Sell Price",
+                        value=f"${sell_exec_price:,.2f}",
+                        delta=f"-${fee/qty:,.2f} fee per share",
+                        delta_color="off",
                     )
 
                 shares_owned = 0
@@ -172,8 +222,10 @@ def render_trade_panel(portfolio):
                 local_now = now_utc.astimezone(user_tz)
                 timestamp_str = local_now.strftime("%Y-%m-%d %H:%M:%S")
 
-                if btn_buy.button("🟢 BUY SHARES", use_container_width=True):
-                    total_cost = total + fee
+                if btn_buy.button(
+                    "🟢 BUY SHARES", use_container_width=True, disabled=not market_open
+                ):
+                    total_cost = qty * buy_exec_price
 
                     if st.session_state.balance >= total_cost:
                         st.session_state.balance -= total_cost
@@ -182,7 +234,7 @@ def render_trade_panel(portfolio):
                             "Ticker": ticker,
                             "Action": "BUY",
                             "Quantity": qty,
-                            "Price": current_price,
+                            "Price": round(buy_exec_price, 2),
                             "Total": round(total_cost, 2),
                         }
                         st.session_state.history = pd.concat(
@@ -195,23 +247,23 @@ def render_trade_panel(portfolio):
                         )
                         database.add_trade(st.session_state.username, new_trade)
 
-                        st.session_state.trade_msg = (
-                            f"✅ Successfully bought {qty} shares of {ticker}!"
-                        )
+                        st.session_state.trade_msg = f"✅ Successfully bought {qty} shares of {ticker} at ${buy_exec_price:,.2f}!"
                         st.rerun()
                     else:
                         st.error("Not enough cash!")
 
-                if btn_sell.button("🔴 SELL SHARES", use_container_width=True):
+                if btn_sell.button(
+                    "🔴 SELL SHARES", use_container_width=True, disabled=not market_open
+                ):
                     if shares_owned >= qty:
-                        total_revenue = total - fee
+                        total_revenue = qty * sell_exec_price
                         st.session_state.balance += total_revenue
                         new_trade = {
                             "Timestamp": timestamp_str,
                             "Ticker": ticker,
                             "Action": "SELL",
                             "Quantity": qty,
-                            "Price": current_price,
+                            "Price": round(sell_exec_price, 2),
                             "Total": round(total_revenue, 2),
                         }
                         st.session_state.history = pd.concat(
@@ -224,9 +276,7 @@ def render_trade_panel(portfolio):
                         )
                         database.add_trade(st.session_state.username, new_trade)
 
-                        st.session_state.trade_msg = (
-                            f"✅ Successfully sold {qty} shares of {ticker}!"
-                        )
+                        st.session_state.trade_msg = f"✅ Successfully sold {qty} shares of {ticker} at ${sell_exec_price:,.2f}!"
                         st.rerun()
                     else:
                         st.error(f"You only own {shares_owned} shares.")
@@ -303,7 +353,9 @@ def render_trade_panel(portfolio):
 
             with tab_news:
                 st.subheader("Recent News")
-                st.info("📰 This feature is currently undergoing maintenance. Check back soon!")
+                st.info(
+                    "📰 This feature is currently undergoing maintenance. Check back soon!"
+                )
 
     else:
         with st.container(border=True):

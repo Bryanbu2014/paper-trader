@@ -40,7 +40,7 @@ def check_password():
             """
             <div style='text-align: center; margin-bottom: 30px;'>
                 <h1 style='font-size: 80px; margin-bottom: 5px;' class='main-logo'>
-                    Paper Trading Lab</br><span class='version-badge'>v1.3.0</span>
+                    Paper Trading Lab</br><span class='version-badge'>v1.4.0</span>
                 </h1>
             </div>
             """,
@@ -86,14 +86,24 @@ def check_password():
 
         with st.expander("🚀 What's New?"):
             with st.expander("v1.4.0"):
-                st.info("Released: April 24, 2026")
-                st.markdown("""
+                st.info("Released: TBD")
+                st.markdown(
+                    """
                     ### New Features ✨
-                    - Integrated a tabbed layout in the Market Terminal for market research and analytics
-                    """)
+                    - Integrated a tabbed layout in the Market Terminal for market research and analytics (fundamentals and recent news)
+                    - Implemented Trade Republic style execution pricing (transaction fees are now integrated directly into the purchase/sale price)
+                    - Added a setting to restrict trading to Extended US Market Hours (4:00 AM – 8:00 PM ET)
+                    - Introduced a comprehensive **Help Center** in the sidebar to guide new users
+                    
+                    ### UI/UX Improvements 💄
+                    - Added red colour to log out button to make it more visible
+                    
+                    """
+                )
             with st.expander("v1.3.0"):
                 st.info("Released: April 23, 2026")
-                st.markdown("""
+                st.markdown(
+                    """
                     ### Security & Authentication 🛡️
                     - Implemented single-device session to enhance account security
                     - Added automatic logout when an account is accessed from another device
@@ -101,10 +111,12 @@ def check_password():
                     
                     ### UI/UX Improvements 💄
                     - Added a 'Remember me' feature to auto-fill username for quicker logins
-                    """)
+                    """
+                )
             with st.expander("v1.2.0"):
                 st.info("Released: April 22, 2026")
-                st.markdown("""
+                st.markdown(
+                    """
                     ### CI Integration 🔥
                     - Set up a CI task to ping the Streamlit app periodically to prevent shutdown
 
@@ -122,10 +134,12 @@ def check_password():
                     ### UI/UX Improvements 💄
                     - Removed distracting anchor links from headers
                     - Upgraded the version badge with a smooth animated background
-                    """)
+                    """
+                )
             with st.expander("v1.1.0"):
                 st.info("Released: April 16, 2026")
-                st.markdown("""
+                st.markdown(
+                    """
                     ### New Features ✨
                     - Introduced a dedicated Settings menu with a full account reset functionality
                     - Implemented daily performance history to track daily gain/loss
@@ -147,17 +161,20 @@ def check_password():
                     - Moved version badge one line below the title
                     - Included light mode
                     - Swapped __What's New?__ view with __Request Access__ view on login page
-                    """)
+                    """
+                )
             with st.expander("v1.0.0"):
                 st.info("Released: April 14, 2026")
-                st.markdown("""
+                st.markdown(
+                    """
                     - Deployed the app to the internet
                     - Connected the app to a database
                     - Added a login screen for only authorized users
                     - Built the screen for buying and selling stocks
                     - Created dashboard
                     - Added a simple history list
-                    """)
+                    """
+                )
 
         with st.expander("🔑 Request Access"):
             st.write(
@@ -178,7 +195,8 @@ def check_password():
                     use_container_width=True,
                 )
 
-            st.markdown("""
+            st.markdown(
+                """
                 **How to get an account:**
                 1. Send me a message with your preferred **Username**.
                 2. I will set up your credentials and provide you with a password.
@@ -186,6 +204,7 @@ def check_password():
                 ---
                 * **Note:** Once you have access, your portfolio and trade history will be saved exclusively to your account name.
                 * **Note:** You are not allowed to change your password.
-                """)
+                """
+            )
 
     return False

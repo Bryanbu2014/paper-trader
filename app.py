@@ -9,6 +9,7 @@ from streamlit_autorefresh import st_autorefresh
 import auth
 import dashboard
 import database
+import help_menu
 import journal
 import settings
 import terminal
@@ -30,11 +31,12 @@ if not auth.check_password():
     st.stop()
 
 if "balance" not in st.session_state:
-    bal, hist, wl, fee = database.load_data(st.session_state.username)
+    bal, hist, wl, fee, mho = database.load_data(st.session_state.username)
     st.session_state.balance = bal
     st.session_state.history = hist
     st.session_state.watchlist = wl
     st.session_state.transaction_fee = fee
+    st.session_state.market_hours_only = mho
 
 
 def handle_account_wipe(new_capital):
@@ -157,7 +159,10 @@ with st.sidebar:
     if st.button("⚙️ Settings", use_container_width=True):
         settings.render_settings(handle_account_wipe)
 
-    if st.button("🚪 Log Out", use_container_width=True):
+    if st.button("❓ Help Center", use_container_width=True):
+        help_menu.render_help()
+
+    if st.button("🚪 Log Out", use_container_width=True, type="primary"):
         st.session_state.logged_in = False
         st.session_state.username = ""
         del st.session_state.balance

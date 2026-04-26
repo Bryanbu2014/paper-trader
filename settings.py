@@ -15,10 +15,17 @@ def render_settings(wipe_account_func):
         step=0.5,
         key="new_fee_input",
     )
+    
+    mho_enabled = st.checkbox(
+        "Restrict Trading to Extended US Market Hours (4:00 AM - 8:00 PM ET)",
+        value=st.session_state.market_hours_only,
+        help="If enabled, you can only execute trades during US pre-market, regular, and after-hours sessions (Mon-Fri)."
+    )
 
     if st.button("Save Settings", use_container_width=True):
         st.session_state.transaction_fee = new_fee
-        database.update_settings(st.session_state.username, new_fee)
+        st.session_state.market_hours_only = mho_enabled
+        database.update_settings(st.session_state.username, new_fee, mho_enabled)
         st.rerun()
 
     st.divider()

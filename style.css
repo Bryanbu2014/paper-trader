@@ -132,3 +132,17 @@ div[data-baseweb="tab-list"] {
 [data-testid="stHeaderActionElements"] {
     display: none !important;
 }
+
+/* Remove all shadows and ghosting effects */
+[data-testid="stDataFrame"], 
+[data-testid="stDataFrame"] > div, 
+[data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stVerticalBlock"],
+.stContainer {
+    box-shadow: none !important;
+}
+
+[data-stale="true"] {
+    opacity: 1 !important;
+    filter: none !important;
+}
